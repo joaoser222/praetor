@@ -39,7 +39,24 @@ services:
     networks:
       - praetor-network
 
+  web:
+    build:
+      context: ./web
+      dockerfile: ../Dockerfile.web
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+    depends_on:
+      - api
+    networks:
+      - praetor-network
+
 networks:
+
   praetor-network:
     driver: bridge
 

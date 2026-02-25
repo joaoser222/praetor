@@ -1,0 +1,13 @@
+import { {{ class_name }}List } from './pages/List';
+
+import { {{ icon | default('ShoppingBag') }} } from 'lucide-react';
+
+export const {{ name }}Routes = [
+  {
+    path: '/{{ plural_name }}',
+    element: <{{ class_name }}List />,
+    label: '{{ plural_name | capitalize }}',
+    icon: {{ icon | default('ShoppingBag') }},
+    showInSidebar: true,
+  },
+];

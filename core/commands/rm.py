@@ -29,9 +29,18 @@ def rm_app(name: str, force: bool):
     # Remove the app directory
     try:
         shutil.rmtree(app_dir)
+        
+        # Remove frontend feature directory if it exists
+        web_dir = os.path.join(settings.BASE_DIR, "web")
+        feature_dir = os.path.join(web_dir, "src", "features", name)
+        if os.path.exists(feature_dir):
+            shutil.rmtree(feature_dir)
+            click.secho(f"✓ Frontend feature '{name}' removed successfully.", fg="green")
+            
         click.secho(f"✓ App '{name}' removed successfully.", fg="green")
     except Exception as e:
         click.secho(f"Error removing app: {e}", fg="red")
+
 
 @rm_cli.command("rm:entity")
 @click.argument("name")
@@ -61,7 +70,15 @@ def rm_entity(name: str, app: str, only: str, except_: str, force: bool):
         "router": (f"routers/{name}.py", None),
         "permission": (f"permissions/{name}.py", None),
         "test": (f"tests/{name}.py", None),
+        "fe_service": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "service.ts"), "frontend"),
+        "fe_list": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "pages/List.tsx"), "frontend"),
+        "fe_routes": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "routes.tsx"), "frontend"),
+        "fe_types": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "types.ts"), "frontend"),
+        "fe_schema": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "schema.ts"), "frontend"),
     }
+
+
+
     
     # Determine which files to remove
     if only:
@@ -110,12 +127,23 @@ def rm_entity(name: str, app: str, only: str, except_: str, force: bool):
     from core.utils import to_pascal_case
     
     for component, (file_path, init_dir) in existing_files.items():
-        full_path = os.path.join(app_dir, file_path)
-        
+        if init_dir == "frontend":
+            full_path = file_path
+        else:
+            full_path = os.path.join(app_dir, file_path)
+
         try:
             # Remove the file
             os.remove(full_path)
             removed_components.append(component)
+
+            # For frontend components, if the directory is now empty, remove it
+            if init_dir == "frontend":
+                parent_dir = os.path.dirname(full_path)
+                if os.path.exists(parent_dir) and not os.listdir(parent_dir):
+                    os.rmdir(parent_dir)
+                    click.secho(f"  Empty frontend directory removed: {os.path.relpath(parent_dir, settings.BASE_DIR)}", fg="cyan")
+
             
             # Update __init__.py if applicable
             if init_dir:

@@ -16,11 +16,21 @@ def make_cli():
 
 @make_cli.command("make:app")
 @click.argument("name")
-def make_app(name: str):
+@click.option("--no-frontend" , is_flag=True, help="Disable frontend feature generation")
+def make_app(name: str, no_frontend: bool):
     """Creates a new app with a default structure."""
     app_dir = os.path.join(settings.BASE_DIR, "apps", name)
     env = _load_template_env()
     class_name = to_pascal_case(name)
+
+    # Frontend feature directory
+    web_dir = os.path.join(settings.BASE_DIR, "web")
+    if os.path.exists(web_dir) and not no_frontend:
+        feature_dir = os.path.join(web_dir, "src", "features", name)
+        os.makedirs(feature_dir, exist_ok=True)
+        # Create a simple index file or placeholder if needed
+        click.secho(f"Frontend feature '{name}' created in {feature_dir}", fg="cyan")
+
 
 
     if os.path.exists(app_dir):
@@ -61,8 +71,11 @@ def make_app(name: str):
 @click.option("--minimal", is_flag=True, help="Generate only model and schema (shortcut for --only model,schema)")
 @click.option("--table-name", "custom_table_name" ,help="Override the default table name")
 @click.option("--no-prefix" , is_flag=True,help="Disable prefix name of app in table name")
+@click.option("--no-frontend" , is_flag=True, help="Disable frontend generation")
 
-def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, custom_table_name: str, no_prefix: bool):
+
+def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, custom_table_name: str, no_prefix: bool, no_frontend: bool):
+
     """Creates a new entity (model, schema, repo, service) inside an app."""
     app_dir = os.path.join(settings.BASE_DIR, "apps", app)
     env = _load_template_env()
@@ -121,6 +134,22 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
         "test": ("entity/test.py.j2", f"tests/{name}.py", None, None),
     }
 
+    # Frontend files (only if web directory exists)
+    web_dir = os.path.join(settings.BASE_DIR, "web")
+    if os.path.exists(web_dir) and not no_frontend:
+        feature_path = os.path.join(web_dir, "src", "features", app, name)
+        all_template_files.update({
+            "fe_service": ("frontend/service.ts.j2", os.path.join(feature_path, "service.ts"), None, None),
+            "fe_list": ("frontend/list.tsx.j2", os.path.join(feature_path, "pages", "List.tsx"), None, None),
+            "fe_routes": ("frontend/routes.tsx.j2", os.path.join(feature_path, "routes.tsx"), None, None),
+            "fe_types": ("frontend/types.ts.j2", os.path.join(feature_path, "types.ts"), None, None),
+            "fe_schema": ("frontend/schema.ts.j2", os.path.join(feature_path, "schema.ts"), None, None),
+        })
+
+
+
+
+
     # Determine which files to generate
     if only:
         components_to_generate = [c.strip() for c in only.split(",")]
@@ -169,16 +198,24 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
     # Generate files
     generated_components = []
     for component, (template_file, target_file, init_dir, import_class) in files_to_generate.items():
-        target_path = os.path.join(app_dir, target_file)
+        if component.startswith("fe_"):
+            target_path = target_file
+            # Ensure subdirectory exists for frontend
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            display_path = os.path.relpath(target_path, settings.BASE_DIR)
+        else:
+            target_path = os.path.join(app_dir, target_file)
+            display_path = os.path.join(f"apps/{app}", target_file)
         
         # Check if file already exists
         if os.path.exists(target_path):
-            click.secho(f"⚠ File already exists: {target_file}", fg="yellow")
+            click.secho(f"⚠ File already exists: {display_path}", fg="yellow")
             if not click.confirm(f"  Overwrite?", default=False):
                 click.secho(f"  Skipped: {component}", fg="yellow")
                 continue
         
         create_from_template(env, template_file, target_path, context)
+
         generated_components.append(component)
         
         # Update __init__.py if applicable

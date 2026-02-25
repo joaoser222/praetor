@@ -1,0 +1,92 @@
+import React, { useEffect, useState, useMemo } from 'react';
+import { {{ name }}Service } from '../service';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import { commonMessages } from '../../../lib/i18n';
+import { Button } from '../../../components/ui/button';
+import { Card, CardContent } from '../../../components/ui/card';
+import { DataTable } from '../../../components/ui/data-table';
+import { ColumnDef } from '@tanstack/react-table';
+
+export const {{ class_name }}List: React.FC = () => {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadItems();
+  }, []);
+
+  const loadItems = async () => {
+    try {
+      const data = await {{ name }}Service.getAll();
+      setItems(data);
+    } catch (error) {
+      console.error('Failed to load items', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm(commonMessages.confirmDelete)) {
+      try {
+        await {{ name }}Service.delete(id);
+        setItems(items.filter(item => item.id !== id));
+      } catch (error) {
+        console.error('Failed to delete item', error);
+      }
+    }
+  };
+
+  const columns = useMemo<ColumnDef<any>[]>(() => [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      cell: ({ row }) => <span className="font-mono text-xs text-muted-foreground">#{row.getValue('id')}</span>,
+    },
+    {
+      accessorKey: 'name',
+      header: 'Name',
+      cell: ({ row }) => <span className="font-medium">{row.getValue('name') || 'N/A'}</span>,
+    },
+    {
+      id: 'actions',
+      header: () => <div className="text-right">{commonMessages.actions}</div>,
+      cell: ({ row }) => (
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" title={commonMessages.edit}>
+            <Edit size={16} />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+            onClick={() => handleDelete(row.original.id)}
+            title={commonMessages.delete}
+          >
+            <Trash2 size={16} />
+          </Button>
+        </div>
+      ),
+    },
+  ], [items]);
+
+  if (loading) return <div className="p-8 text-center">{commonMessages.loading}</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">{{ plural_name | capitalize }}</h1>
+        <Button className="gap-2">
+          <Plus size={18} />
+          {commonMessages.add} {{ class_name }}
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-6">
+          <DataTable columns={columns} data={items} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+};

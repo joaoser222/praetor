@@ -1,0 +1,29 @@
+import api from '../../../lib/api';
+
+
+export const {{ name }}Service = {
+  async getAll(params?: any) {
+    const response = await api.get('/{{ app_name }}/{{ name }}/', { params });
+    return response.data;
+  },
+
+  async getOne(id: number | string) {
+    const response = await api.get(`/{{ app_name }}/{{ name }}/${id}`);
+    return response.data;
+  },
+
+  async create(data: any) {
+    const response = await api.post('/{{ app_name }}/{{ name }}/', data);
+    return response.data;
+  },
+
+  async update(id: number | string, data: any) {
+    const response = await api.put(`/{{ app_name }}/{{ name }}/${id}`, data);
+    return response.data;
+  },
+
+  async delete(id: number | string) {
+    const response = await api.delete(`/{{ app_name }}/{{ name }}/${id}`);
+    return response.data;
+  }
+};
