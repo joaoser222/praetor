@@ -98,6 +98,7 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
     
     context = {
         "name": name,
+        "app_name": app,
         "class_name": to_pascal_case(name),
         "repo_name": f"{pascal_name}Repository",
         "service_name": f"{pascal_name}Service",
@@ -105,6 +106,7 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
         "plural_name": plural_name,
         "attributes": {}  # Required for schema template compatibility
     }
+
 
     # All possible files to generate
     # Format: (template_file, target_file, init_dir, import_class)

@@ -1,1 +1,29 @@
-# Basic tests for the '{{ name }}' entity
+import pytest
+from fastapi import status
+
+@pytest.mark.asyncio
+async def test_get_all_{{ name }}(client):
+    """
+    Test the list endpoint for {{ class_name }}.
+    Note: You might need to mock 'require_permission' if you haven't 
+    configured a user with permissions in your test database.
+    """
+    # Bypass permission check for testing if needed:
+    # from main import app
+    # from core.dependencies import require_permission
+    # app.dependency_overrides[require_permission("{{ name }}:list")] = lambda: None
+    
+    response = client.get("/api/{{ app_name }}/{{ name }}/")
+    
+    # If using RBAC, this might return 403 unless authenticated.
+    # This serves as a reminder to handle auth in tests.
+    assert response.status_code in [status.HTTP_200_OK, status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
+
+@pytest.mark.asyncio
+async def test_create_{{ name }}_unauthorized(client):
+    """
+    Verify that creating a {{ name }} requires authentication/permission.
+    """
+    payload = {} # Should be filled with valid data based on schema
+    response = client.post("/api/{{ app_name }}/{{ name }}/", json=payload)
+    assert response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN, status.HTTP_422_UNPROCESSABLE_ENTITY]

@@ -1,44 +1,75 @@
 from typing import List
-
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.database import get_db
 from core.exceptions import NotFoundException
+from core.dependencies import require_permission
 from ..schemas import {{ name }} as schema
-from ..repositories.{{ name }} import {{ class_name }}Repository
+from ..services.{{ name }} import {{ class_name }}Service
 
 router = APIRouter(prefix="/{{ name }}")
 
-
-@router.post("/", response_model=schema.{{ class_name }}Response, status_code=status.HTTP_201_CREATED)
-async def create_{{ name }}({{ name }}_in: schema.{{ class_name }}Create, db: AsyncSession = Depends(get_db)):
-    repo = {{ class_name }}Repository(db)
-    return await repo.create(obj_in={{ name }}_in)
+async def get_service(db: AsyncSession = Depends(get_db)) -> {{ class_name }}Service:
+    return {{ class_name }}Service(db)
 
 
-@router.get("/", response_model=List[schema.{{ class_name }}Response])
-async def get_all_{{ name }}(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
-    repo = {{ class_name }}Repository(db)
-    return await repo.get_multi(skip=skip, limit=limit)
+@router.post("/", 
+             response_model=schema.{{ class_name }}Response, 
+             status_code=status.HTTP_201_CREATED,
+             dependencies=[Depends(require_permission("{{ name }}:create"))])
+async def create_{{ name }}(
+    {{ name }}_in: schema.{{ class_name }}Create, 
+    service: {{ class_name }}Service = Depends(get_service)
+):
+    return await service.create(obj_in={{ name }}_in)
 
 
-@router.get("/{pk_type}", response_model=schema.{{ class_name }}Response)
-async def get_{{ name }}(id: int, db: AsyncSession = Depends(get_db)):
-    repo = {{ class_name }}Repository(db)
-    db_obj = await repo.get(pk=id)
+@router.get("/", 
+            response_model=List[schema.{{ class_name }}Response],
+            dependencies=[Depends(require_permission("{{ name }}:list"))])
+async def get_all_{{ name }}(
+    skip: int = 0, 
+    limit: int = 100, 
+    service: {{ class_name }}Service = Depends(get_service)
+):
+    return await service.get_multi(skip=skip, limit=limit)
+
+
+@router.get("/{id}", 
+            response_model=schema.{{ class_name }}Response,
+            dependencies=[Depends(require_permission("{{ name }}:read"))])
+async def get_{{ name }}(
+    id: int, 
+    service: {{ class_name }}Service = Depends(get_service)
+):
+    db_obj = await service.get(pk=id)
     if not db_obj:
         raise NotFoundException(detail="{{ class_name }} not found")
     return db_obj
 
 
-@router.put("/{pk_type}", response_model=schema.{{ class_name }}Response)
-async def update_{{ name }}(id: int, {{ name }}_in: schema.{{ class_name }}Update, db: AsyncSession = Depends(get_db)):
-    repo = {{ class_name }}Repository(db)
-    return await repo.update(pk=id, obj_in={{ name }}_in)
+@router.put("/{id}", 
+            response_model=schema.{{ class_name }}Response,
+            dependencies=[Depends(require_permission("{{ name }}:update"))])
+async def update_{{ name }}(
+    id: int, 
+    {{ name }}_in: schema.{{ class_name }}Update, 
+    service: {{ class_name }}Service = Depends(get_service)
+):
+    db_obj = await service.update(pk=id, obj_in={{ name }}_in)
+    if not db_obj:
+        raise NotFoundException(detail="{{ class_name }} not found")
+    return db_obj
 
 
-@router.delete("/{pk_type}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_{{ name }}(id: int, db: AsyncSession = Depends(get_db)):
-    repo = {{ class_name }}Repository(db)
-    await repo.delete(pk=id)
+@router.delete("/{id}", 
+               status_code=status.HTTP_204_NO_CONTENT,
+               dependencies=[Depends(require_permission("{{ name }}:delete"))])
+async def delete_{{ name }}(
+    id: int, 
+    service: {{ class_name }}Service = Depends(get_service)
+):
+    db_obj = await service.delete(pk=id)
+    if not db_obj:
+        raise NotFoundException(detail="{{ class_name }} not found")

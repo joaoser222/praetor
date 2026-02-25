@@ -5,8 +5,10 @@ from core.utils import PermissionDef
 # These permissions will be automatically discovered and synced with the database.
 DEFINED_PERMISSIONS: List[PermissionDef] = [
     PermissionDef("{{ name }}:create", "Allows creating new {{ name }} items."),
+    PermissionDef("{{ name }}:list", "Allows listing {{ name }} items."),
     PermissionDef("{{ name }}:read", "Allows viewing {{ name }} items."),
     PermissionDef("{{ name }}:update", "Allows updating existing {{ name }} items."),
+
     PermissionDef("{{ name }}:delete", "Allows deleting {{ name }} items."),
     PermissionDef("{{ name }}:bulk_delete", "Allows deleting multiple {{ name }} items."),
 ]

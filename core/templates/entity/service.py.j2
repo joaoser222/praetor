@@ -8,3 +8,18 @@ class {{ class_name }}Service(BaseService):
     def __init__(self, db: AsyncSession):
         super().__init__(db)
         self.repo = {{ class_name }}Repository(db)
+
+    async def get(self, pk: any):
+        return await self.repo.get(pk)
+
+    async def get_multi(self, skip: int = 0, limit: int = 100):
+        return await self.repo.get_multi(skip=skip, limit=limit)
+
+    async def create(self, obj_in):
+        return await self.repo.create(obj_in=obj_in)
+
+    async def update(self, pk: any, obj_in):
+        return await self.repo.update(pk=pk, obj_in=obj_in)
+
+    async def delete(self, pk: any):
+        return await self.repo.delete(pk=pk)
