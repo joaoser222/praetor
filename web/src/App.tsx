@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import LoginPage from './features/auth/action/pages/LoginPage';
-import { Sidebar } from './components/Sidebar';
-import { Header } from './components/Header';
+import LoginPage from '@/features/auth/action/pages/LoginPage';
+import { Sidebar } from '@/components/Sidebar';
+import { Header } from '@/components/Header';
 
 // ----------------------------------------------------------------------
 // Dynamic Route Discovery

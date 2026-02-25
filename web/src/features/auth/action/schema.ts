@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { zodMessages } from '../../../lib/i18n';
+import { zodMessages } from '@/lib/i18n';
 
 export const loginSchema = z.object({
     email: z.string().email(zodMessages.invalidEmail),

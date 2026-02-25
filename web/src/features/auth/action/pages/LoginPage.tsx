@@ -4,12 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { authService } from '../service';
-import { loginSchema, type LoginFormValues } from '../schema';
-import { authMessages } from '../../i18n';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/card';
+import { authService } from '@/features/auth/action/service';
+import { loginSchema, type LoginFormValues } from '@/features/auth/action/schema';
+import { authMessages } from '@/features/auth/i18n';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
