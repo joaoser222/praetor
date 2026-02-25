@@ -1,21 +1,24 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
-from jose import jwt, JWTError
-from passlib.context import CryptContext
+import jwt
+import bcrypt
 import secrets
 
 from config.settings import settings
 from core.exceptions import UnauthorizedException
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    pwd_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hash_bytes = bcrypt.hashpw(pwd_bytes, salt)
+    return hash_bytes.decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    pwd_bytes = plain_password.encode('utf-8')
+    hash_bytes = hashed_password.encode('utf-8')
+    return bcrypt.checkpw(pwd_bytes, hash_bytes)
 
 
 # ==================== JWT Token Functions ====================
@@ -23,14 +26,14 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(data: Dict[str, Any]) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": int(expire.timestamp())})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 def create_refresh_token(data: Dict[str, Any]) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": int(expire.timestamp())})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
@@ -38,7 +41,7 @@ def decode_token(token: str) -> Dict[str, Any]:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
-    except JWTError:
+    except jwt.PyJWTError:
         raise UnauthorizedException(detail="Could not validate credentials")
 
 
@@ -56,6 +59,7 @@ def is_jwt_token(token: str) -> bool:
         return True
     except Exception:
         return False
+
 
 
 # ==================== Opaque Token Functions ====================

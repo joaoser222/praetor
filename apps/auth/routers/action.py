@@ -23,24 +23,20 @@ async def register_user(
 
 @router.post("/login", response_model=schemas.Token)
 async def login_for_access_token(
-    form_data: schemas.UserLogin, db: AsyncSession = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Authenticate user and return tokens using the hybrid model.
-    
-    Hybrid Model:
-    - Access Token: JWT (stateless, performático, sem consulta ao banco)
-    - Refresh Token: Opaque no banco (pode ser revogado facilmente)
-    
-    This combines the best of both worlds:
-    - Performance: JWT access tokens don't require database lookups
-    - Security: Refresh tokens can be revoked by removing from database
+    Supporting OAuth2PasswordRequestForm allows using Swagger UI's 'Authorize' feature.
     """
     user_service = UserService(db)
+    # OAuth2PasswordRequestForm uses 'username' field, which we map to 'email'
     return await user_service.authenticate_user(
-        form_data.email, 
+        form_data.username, 
         form_data.password
     )
+
 
 @router.post("/refresh", response_model=schemas.Token)
 async def refresh_access_token(

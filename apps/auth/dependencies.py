@@ -1,4 +1,5 @@
 from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, Dict, Any
 from config.database import get_db
@@ -8,27 +9,17 @@ from .models import User
 from .repositories.user import UserRepository
 
 
-class TokenBearer:
+class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
     """
-    Validates JWT access tokens (hybrid model).
-    Automatically detects and validates JWT tokens.
-    Can extract token from header 'Authorization' or cookie 'access_token'.
-    
-    Note: In the hybrid model, access tokens are always JWT.
+    FastAPI native security scheme extended to support HttpOnly cookies.
+    This enables the 'Authorize' button in Swagger UI while maintaining
+    the hybrid (Header + Cookie) authentication model.
     """
-
-    def __init__(self, auto_error: bool = True):
-        self.auto_error = auto_error
-
-    async def __call__(self, request: Request) -> Dict[str, Any]:
-        # 1. Try to get the token from the header Authorization
-        auth: Optional[str] = request.headers.get("Authorization")
-        token = None
-
-        if auth and auth.startswith("Bearer "):
-            token = auth[len("Bearer "):]
-
-        # 2. Try to get the token from the cookie (HttpOnly)
+    async def __call__(self, request: Request) -> Optional[str]:
+        # 1. Try to get token from standard Authorization header (FastAPI default)
+        token: Optional[str] = await super().__call__(request)
+        
+        # 2. If not in header, try to get from cookie
         if not token:
             token = request.cookies.get("access_token")
 
@@ -37,77 +28,64 @@ class TokenBearer:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Not authenticated",
+                    headers={"WWW-Authenticate": "Bearer"},
                 )
-            else:
-                return None
+            return None
 
-        # 3. Validate JWT token (access tokens are always JWT in hybrid model)
-        if not is_jwt_token(token):
+        return token
+
+
+# Initialize the scheme pointing to the login endpoint
+oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/api/auth/action/login")
+
+
+
+async def get_token_payload(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+    """
+    Decodes and validates the JWT token.
+    """
+    if not is_jwt_token(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token format",
+        )
+    
+    try:
+        payload = decode_token(token)
+        if "sub" not in payload:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token format. Expected JWT token.",
+                detail="Invalid token payload",
             )
-        
-        # Validate JWT token
-        try:
-            payload = decode_token(token)
-            user_id = payload.get("sub")
-            if user_id is None:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid JWT token payload",
-                )
-            return {
-                "token": token,
-                "type": "jwt",  # Access tokens are always JWT in hybrid model
-                "payload": payload,
-                "user_id": int(user_id)
-            }
-        except HTTPException:
-            raise
-        except Exception:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired JWT token",
-            )
-
-
-# Maintain compatibility with existing code
-class JWTBearer(TokenBearer):
-    """
-    Compatibility class. In the hybrid model, access tokens are always JWT.
-    Use TokenBearer for consistency.
-    """
-    pass
-
-
-token_scheme = TokenBearer()
-jwt_scheme = token_scheme  # Maintain compatibility
+        return payload
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired or invalid",
+        )
 
 
 async def get_current_user(
-    token_data: Dict[str, Any] = Depends(token_scheme),
+    payload: Dict[str, Any] = Depends(get_token_payload),
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """
-    Get the current user based on the JWT access token.
-    
-    In the hybrid model, access tokens are always JWT, so validation
-    has already been done in TokenBearer. This function just retrieves
-    the user from the database.
+    Get current user from database using the token payload.
     """
-    # JWT validation has already been done in TokenBearer
-    user_id = token_data["user_id"]
+    user_id = payload.get("sub")
+    if not user_id:
+        raise UnauthorizedException(detail="Token missing user information")
 
-    # Search the user in the database
     user_repo = UserRepository(db)
-    user = await user_repo.get(user_id)
+    user = await user_repo.get(int(user_id))
+    
     if user is None or not user.status:
-        raise UnauthorizedException(detail="User not found or not active")
+        raise UnauthorizedException(detail="User not found or inactive")
+        
     return user
 
 
 def get_current_active_superuser(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_superuser:
-        raise ForbiddenException(detail="The user doesn't have enough privileges")
+        raise ForbiddenException(detail="Superuser privileges required")
     return current_user
