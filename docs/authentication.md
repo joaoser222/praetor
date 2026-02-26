@@ -1,6 +1,6 @@
 # Authentication & Security
 
-PraetorAPI implements a high-security, hybrid authentication model using JWT and Opaque Refresh Tokens.
+Praetor implements a high-security, hybrid authentication model using JWT and Opaque Refresh Tokens.
 
 ## The Hybrid Model
 

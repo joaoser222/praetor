@@ -1,6 +1,6 @@
 # Architecture Overview
 
-PraetorAPI follows a modular, domain-driven architecture designed for high scalability and clear separation of concerns.
+Praetor follows a modular, domain-driven architecture designed for high scalability and clear separation of concerns.
 
 ## Modular Structure (Apps)
 

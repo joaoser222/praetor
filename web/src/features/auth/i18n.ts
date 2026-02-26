@@ -1,5 +1,5 @@
 export const authMessages = {
-    loginTitle: 'PraetorAPI',
+    loginTitle: 'Praetor',
     loginSubtitle: 'Sign in to your account to continue',
     emailLabel: 'Email address',
     passwordLabel: 'Password',

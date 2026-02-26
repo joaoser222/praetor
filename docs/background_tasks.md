@@ -1,6 +1,6 @@
 # Background Tasks (Celery)
 
-PraetorAPI has built-in support for asynchronous background tasks using **Celery**. This is ideal for long-running operations like sending emails, processing files, or communicating with external APIs.
+Praetor has built-in support for asynchronous background tasks using **Celery**. This is ideal for long-running operations like sending emails, processing files, or communicating with external APIs.
 
 ## Configuration
 

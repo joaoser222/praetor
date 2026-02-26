@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     # Project root directory
     BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
-    APP_NAME: str = "PraetorAPI"
+    APP_NAME: str = "Praetor"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
 

@@ -1,13 +1,13 @@
 # Getting Started
 
-Get your PraetorAPI project up and running in minutes.
+Get your Praetor project up and running in minutes.
 
 ## 1. Environment Setup
 
 ```bash
 # Clone and enter the project
 git clone <repo_url>
-cd praetor-api
+cd praetor
 
 # Setup Python environment
 python -m venv venv
@@ -49,7 +49,7 @@ python manage.py run:server
 
 ## 4. Frontend Integration
 
-PraetorAPI comes with a professional **React + Vite + Tailwind** frontend.
+Praetor comes with a professional **React + Vite + Tailwind** frontend.
 
 ```bash
 cd web

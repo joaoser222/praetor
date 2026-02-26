@@ -1,4 +1,4 @@
-# PraetorAPI: Full-Stack FastAPI Modular Boilerplate
+# Praetor: Full-Stack FastAPI Modular Boilerplate
 
 A professional, production-ready full-stack boilerplate. It combines a **FastAPI** backend (inspired by Django's modularity) with a modern **React + Vite** frontend, all orchestrated by a powerful automated CLI.
 
@@ -25,9 +25,9 @@ A professional, production-ready full-stack boilerplate. It combines a **FastAPI
 - **DataTable by Default**: Powerful data handling with **TanStack Table**.
 - **Validated Forms**: Schema-based validation using **React Hook Form** + **Zod**.
 
-## 🛠 Why PraetorAPI?
+## 🛠 Why Praetor?
 
-PraetorAPI is built to accelerate development without sacrificing architectural integrity. It bridges the gap between the speed of FastAPI and the organized patterns required for large-scale applications.
+Praetor is built to accelerate development without sacrificing architectural integrity. It bridges the gap between the speed of FastAPI and the organized patterns required for large-scale applications.
 
 1.  **True Full-Stack Automation**: Running `python manage.py make:entity` generates everything from the DB model and API endpoints to the React List view and its API client.
 2.  **Modular & Scalable**: Features are self-contained. Need to move an app to a microservice? It's already decoupled.
@@ -40,7 +40,7 @@ PraetorAPI is built to accelerate development without sacrificing architectural 
 ```bash
 # Clone the repository
 git clone <your-repo-url>
-cd praetor-api
+cd praetor
 
 # Setup Backend
 python -m venv venv
@@ -80,7 +80,7 @@ docker-compose up --build
 ## 📂 Project Structure
 
 ```
-praetor-api/
+praetor/
 ├── apps/                # Backend Modular Apps (Domain-Driven)
 ├── core/                # CLI, Base Classes, Templates, Celery
 ├── config/              # Centralized configuration (FastAPI, Logging)
@@ -93,4 +93,4 @@ praetor-api/
 ```
 
 ---
-*PraetorAPI - Building scalable systems, faster.*
+*Praetor - Building scalable systems, faster.*
