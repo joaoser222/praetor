@@ -30,6 +30,7 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_str(self) -> List[str]:
-        return [str(u) for u in self.CORS_ORIGINS]
+        return [str(u).rstrip("/") for u in self.CORS_ORIGINS]
+
 
 settings = Settings()
