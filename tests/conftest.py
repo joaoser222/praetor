@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from config.database import get_db
-from core.base_model import Base
+from core.base_model import BaseModel
 from main import app
 
 # Use an in-memory SQLite database for testing
@@ -31,13 +31,14 @@ def event_loop():
 async def db() -> AsyncGenerator[AsyncSession, None]:
     """Fixture to create a new database session for each test."""
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(BaseModel.metadata.create_all)
 
     async with TestingSessionLocal() as session:
         yield session
 
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(BaseModel.metadata.drop_all)
+
 
 
 @pytest.fixture(scope="function")
