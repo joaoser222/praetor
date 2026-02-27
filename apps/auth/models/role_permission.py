@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Integer, String,ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import roles
 from core.base_model import BaseModel
 
 class RolePermission(BaseModel):
