@@ -128,9 +128,6 @@ def auth_cli():
 def auth_createsuperuser():
     """Creates a superuser."""
     email = click.prompt("Email", type=str)
-    if asyncio.run(_check_user_exists(email)):
-        return
-
     username = click.prompt("Username", type=str)
     full_name = click.prompt("Full Name", type=str)
     password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
@@ -143,8 +140,15 @@ def auth_createsuperuser():
         is_superuser=True,
         is_active=True,
     )
-    user = asyncio.run(_create_user(user_data))
-    click.echo(f"Superuser {user.email} created successfully.")
+
+    async def _run_command():
+        if await _check_user_exists(email):
+            return
+        user = await _create_user(user_data)
+        click.echo(f"Superuser {user.email} created successfully.")
+
+    asyncio.run(_run_command())
+
 
 @auth_cli.command("auth:makepermissions")
 def auth_makepermissions():
