@@ -19,7 +19,11 @@ interface RouteConfig {
 
 const allRoutes: RouteConfig[] = Object.values(featureModules).flatMap((module: any) => {
   const exportName = Object.keys(module).find(key => key.endsWith('Routes'));
-  return exportName ? module[exportName] : [];
+  const routes = exportName ? module[exportName] : [];
+  return routes.map((r: RouteConfig) => ({
+    ...r,
+    path: r.path === '/' ? '/panel' : `/panel${r.path.startsWith('/') ? r.path : '/' + r.path}`
+  }));
 });
 
 // ----------------------------------------------------------------------
@@ -42,7 +46,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
 
-          <Route path="*" element={
+          <Route path="/panel/*" element={
             <PrivateRoute>
               <div className="flex min-h-screen">
                 <Sidebar routes={allRoutes} onLogout={handleLogout} />
@@ -52,16 +56,20 @@ function App() {
 
                   <main className="flex-1 overflow-auto p-6 bg-gray-50/50">
                     <Routes>
-                      {allRoutes.map((route) => (
-                        <Route key={route.path} path={route.path} element={route.element} />
-                      ))}
-                      <Route path="*" element={<Navigate to="/" replace />} />
+                      {allRoutes.map((route) => {
+                        const relativePath = route.path === '/panel' ? '' : route.path.replace('/panel/', '');
+                        return <Route key={route.path} path={relativePath} element={route.element} />;
+                      })}
+                      <Route path="*" element={<Navigate to="/panel" replace />} />
                     </Routes>
                   </main>
                 </div>
               </div>
             </PrivateRoute>
           } />
+
+          <Route path="/" element={<Navigate to="/panel" replace />} />
+          <Route path="*" element={<Navigate to="/panel" replace />} />
         </Routes>
       </div>
       <Toaster position="top-right" />
