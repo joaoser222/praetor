@@ -1,0 +1,41 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { {{ name }}Service } from '../service';
+import { {{ class_name }}Form } from '../components/Form';
+import { {{ class_name }}FormValues } from '../schema';
+import { commonMessages } from '@/lib/i18n';
+
+export const {{ class_name }}Create: React.FC = () => {
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (data: {{ class_name }}FormValues) => {
+    setIsSubmitting(true);
+    try {
+      await {{ name }}Service.create(data);
+      navigate('/{{ plural_name }}');
+    } catch (error) {
+      console.error('Failed to create', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          {commonMessages.add} {{ class_name }}
+        </h1>
+      </div>
+
+      <div className="max-w-2xl">
+        <{{ class_name }}Form 
+          onSubmit={handleSubmit} 
+          onCancel={() => navigate('/{{ plural_name }}')}
+          isLoading={isSubmitting} 
+        />
+      </div>
+    </div>
+  );
+};

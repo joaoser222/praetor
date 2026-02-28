@@ -1,4 +1,6 @@
 import { {{ class_name }}List } from './pages/List';
+import { {{ class_name }}Create } from './pages/Create';
+import { {{ class_name }}Update } from './pages/Update';
 
 import { {{ icon | default('ShoppingBag') }} } from 'lucide-react';
 
@@ -9,5 +11,15 @@ export const {{ name }}Routes = [
     label: '{{ plural_name | capitalize }}',
     icon: {{ icon | default('ShoppingBag') }},
     showInSidebar: true,
+  },
+  {
+    path: '/{{ plural_name }}/new',
+    element: <{{ class_name }}Create />,
+    showInSidebar: false,
+  },
+  {
+    path: '/{{ plural_name }}/:id/edit',
+    element: <{{ class_name }}Update />,
+    showInSidebar: false,
   },
 ];

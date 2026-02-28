@@ -1,0 +1,66 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { {{ name }}Service } from '../service';
+import { {{ class_name }}Form } from '../components/Form';
+import { {{ class_name }}FormValues } from '../schema';
+import { commonMessages } from '@/lib/i18n';
+
+export const {{ class_name }}Update: React.FC = () => {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const [initialData, setInitialData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      loadData(id);
+    }
+  }, [id]);
+
+  const loadData = async (recordId: string) => {
+    try {
+      const data = await {{ name }}Service.getOne(recordId);
+      setInitialData(data);
+    } catch (error) {
+      console.error('Failed to load record', error);
+      navigate('/{{ plural_name }}');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (data: {{ class_name }}FormValues) => {
+    if (!id) return;
+    setIsSubmitting(true);
+    try {
+      await {{ name }}Service.update(id, data);
+      navigate('/{{ plural_name }}');
+    } catch (error) {
+      console.error('Failed to update', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) return <div className="p-8 text-center">{commonMessages.loading}</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          {commonMessages.edit} {{ class_name }}
+        </h1>
+      </div>
+
+      <div className="max-w-2xl">
+        <{{ class_name }}Form 
+          initialData={initialData}
+          onSubmit={handleSubmit} 
+          onCancel={() => navigate('/{{ plural_name }}')}
+          isLoading={isSubmitting} 
+        />
+      </div>
+    </div>
+  );
+};

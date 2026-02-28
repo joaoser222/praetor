@@ -1,0 +1,53 @@
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { {{ name }}Schema, {{ class_name }}FormValues } from '../schema';
+import { commonMessages } from '@/lib/i18n';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+
+interface {{ class_name }}FormProps {
+  initialData?: any;
+  onSubmit: (data: {{ class_name }}FormValues) => void;
+  onCancel: () => void;
+  isLoading?: boolean;
+}
+
+export const {{ class_name }}Form: React.FC<{{ class_name }}FormProps> = ({ 
+  initialData, 
+  onSubmit, 
+  onCancel, 
+  isLoading 
+}) => {
+  const { register, handleSubmit, formState: { errors } } = useForm<{{ class_name }}FormValues>({
+    resolver: zodResolver({{ name }}Schema),
+    defaultValues: initialData || {
+      name: '',
+    },
+  });
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-medium">Nome</label>
+            <Input id="name" {...register('name')} placeholder="Nome..." disabled={isLoading} />
+            {errors.name && <span className="text-xs text-destructive">{errors.name.message}</span>}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+              {commonMessages.cancel}
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? commonMessages.saving : commonMessages.save}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+};
