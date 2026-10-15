@@ -28,8 +28,8 @@ Each entity is a self-contained module with its own:
 - `types.ts`: TypeScript interfaces mirroring backend schemas.
 
 ### Component Organization
-- `web/src/components/ui/`: Atomic, "raw" components based on **shadcn/ui** patterns (Button, Input, Card, Table). Optimized for CSS-variable-based theming.
-- `web/src/components/`: High-level structural components (Sidebar, Header).
+- UI: **Mantine v9** components (`@mantine/core`, `@mantine/hooks`), configured via `MantineProvider` in `web/src/main.tsx`.
+- `web/src/components/`: `DataTable` (**TanStack Table** rendered with Mantine's `Table`) and layout components (`Sidebar`, `Header`; `AppShell` in `App.tsx`).
 
 ### Automatic Route Discovery
 The frontend uses Vite's `import.meta.glob` to automatically scan all `features/**/routes.tsx` files. Adding a new feature automatically integrates its routes into the main application and Sidebar without manual registration.

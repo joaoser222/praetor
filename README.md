@@ -21,8 +21,8 @@ A professional, production-ready full-stack boilerplate. It combines a **FastAPI
 ### 🎨 Frontend (React + Vite)
 - **Domain-Driven Design**: Organized by features (`src/features/{app}/{entity}`).
 - **Zero-Config Routing**: Automatic discovery of routes from feature directories.
-- **Modern UI Stack**: Tailwind CSS, **shadcn/ui** components, and Lucide icons.
-- **DataTable by Default**: Powerful data handling with **TanStack Table**.
+- **Modern UI Stack**: **Mantine** components and Lucide icons.
+- **DataTable by Default**: Powerful data handling with **TanStack Table** rendered by Mantine's `Table`.
 - **Validated Forms**: Schema-based validation using **React Hook Form** + **Zod**.
 
 ## 🛠 Why Praetor?
@@ -86,8 +86,8 @@ praetor/
 ├── config/              # Centralized configuration (FastAPI, Logging)
 ├── web/                 # React Frontend
 │   ├── src/features/    # Frontend Modules (DDD)
-│   ├── src/components/  # UI Library (shadcn/ui patterns)
-│   └── src/lib/         # i18n, API client, Utils
+│   ├── src/components/  # Layout (AppShell) and DataTable (Mantine)
+│   └── src/lib/         # i18n, API client
 ├── manage.py            # The Heart of the DX
 └── docker-compose.yml   # Full-stack orchestration
 ```

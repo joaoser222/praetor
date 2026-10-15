@@ -49,7 +49,7 @@ python manage.py run:server
 
 ## 4. Frontend Integration
 
-Praetor comes with a professional **React + Vite + Tailwind** frontend.
+Praetor comes with a professional **React + Vite + Mantine** frontend.
 
 ```bash
 cd web
