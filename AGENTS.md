@@ -9,6 +9,15 @@ Boilerplate full-stack: backend **FastAPI** (apps modulares, camadas repository/
 - Textos exibidos ao usuário no frontend são em **português**, exceto termos já consagrados em inglês (ex.: "internet", "web", "surf").
 - Nome do projeto: **Praetor**.
 
+## Gitflow (branches e commits)
+Documentação detalhada em `CONTRIBUTING.md`; resumo operacional:
+- Modelo: **Gitflow completo**. Branches longevas: `master` (produção, tagueada `vX.Y.Z`) e `develop` (integração). **Nunca** commitar direto nelas — sempre via Pull Request.
+- Branches de apoio: `feature/<nome>` (de/para `develop`), `bugfix/<nome>` (opcional, de/para `develop`), `release/<X.Y.Z>` (de `develop`; merge em `master` **e** `develop`, com tag) e `hotfix/<X.Y.Z>` (de `master`; merge em `master` **e** `develop`, com tag).
+- Merges de feature/hotfix usam `--no-ff`; apague a branch após o merge. PRs de feature/bugfix miram `develop`; os de release/hotfix miram `master`.
+- Commits seguem a **Angular Convention** com descrição em **pt-BR** e ≤ 72 caracteres (ver `.agents/skills/git-commit/SKILL.md`), ex.: `fix(auth): corrige expiração do token`.
+- CI obrigatório antes do merge: jobs `backend` (`ruff check .` + `pytest`), `frontend` (`npm run lint` + `npm run build`) e `codegen` (`make:app`/`make:entity` + build).
+- Bootstrap (a branch `develop` ainda não existe): `git branch develop master && git push -u origin develop`.
+
 ## Configuração do ambiente
 - `config/settings.py` exige `DATABASE_URL` e `SECRET_KEY` (sem valores padrão). Sem eles, **qualquer** import do backend falha. Faça `cp .env.example .env` (o exemplo já aponta para SQLite em `./default.db`), ou exporte as duas variáveis.
 - Para a maior parte do trabalho de backend/CLI isto basta:

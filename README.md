@@ -7,6 +7,9 @@ A professional, production-ready full-stack boilerplate. It combines a **FastAPI
 ### 📚 [Explore the Detailed Documentation](./docs/getting_started.md)
 *Architecture, Authentication, CLI, Background Tasks, and more.*
 
+### 🤝 [Contributing & Gitflow](./CONTRIBUTING.md)
+*Branching model, commit convention, and release process.*
+
 ---
 
 ## 🔥 Key Features
