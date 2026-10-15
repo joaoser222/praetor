@@ -55,6 +55,13 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     logger.exception(f"Unhandled error on {request.method} {request.url.path}")
     return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
 
+# Endpoint de liveness (usado por healthchecks de container).
+@app.get("/health", tags=["health"])
+async def health_check():
+    """Retorna o estado básico da aplicação."""
+    return {"status": "ok"}
+
+
 # --- Descoberta de apps ---
 # 1. Descobre e registra todos os apps do diretório 'apps'.
 auto_discover_apps()

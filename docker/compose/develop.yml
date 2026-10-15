@@ -1,0 +1,49 @@
+# =============================================================================
+# Ambiente de DESENVOLVIMENTO
+# =============================================================================
+#
+# Importa os componentes de `base.yml` e adiciona o que é específico do
+# desenvolvimento:
+#   - bind mounts (o código do host é refletido no container);
+#   - servidor do Vite com HMR e auto-reload do uvicorn;
+#   - SQLite (sem serviço de banco);
+#   - portas publicadas para acesso local (api 8000, web 5173, redis 6379).
+#
+# O atalho na raiz (`docker-compose.yml`) importa este arquivo, então a partir
+# da raiz basta:
+#   cp .env.example .env
+#   docker compose up --build
+#
+# Endpoints: web em http://localhost:5173 e api em http://localhost:8000
+#
+# Caminhos relativos são resolvidos a partir desta pasta (`docker/compose/`).
+# =============================================================================
+
+name: ${PROJECT_NAME:-praetor}
+
+include:
+  - base.yml
+
+services:
+  api:
+    command: ["python", "manage.py", "run:server", "--host", "0.0.0.0", "--reload"]
+    volumes:
+      - ../../:/app
+    ports:
+      - "8000:8000"
+
+  worker:
+    volumes:
+      - ../../:/app
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  web:
+    volumes:
+      - ../../web:/app
+      # Volume anônimo preserva o node_modules instalado na imagem.
+      - /app/node_modules
+    ports:
+      - "5173:5173"

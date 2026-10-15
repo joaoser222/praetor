@@ -1,0 +1,42 @@
+# Contexto de build do BACKEND (api/worker).
+# Mantém a imagem enxuta: sem VCS, sem o frontend, sem segredos e sem caches.
+
+# Versionamento / editores
+.git
+.gitignore
+.github
+.idea
+.vscode
+
+# Segredos e ambiente (as variáveis chegam via compose/stdlib, não pelo arquivo)
+.env
+.env.*
+
+# Docker (não pertencem à imagem)
+docker/
+docker-compose*.yml
+.dockerignore
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Bancos locais e dados
+*.db
+data/
+
+# Frontend — não pertence à imagem do backend
+web/
+node_modules/
+dist/
+
+# Testes e documentação (desnecessários em runtime)
+tests/
+conftest.py
+docs/
+*.md

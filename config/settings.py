@@ -26,7 +26,14 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: List[AnyHttpUrl] = []
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        # Ignora variáveis de ambiente sem campo correspondente (ex.: POSTGRES_*,
+        # SERVER_*, HOSTNAME). Sem isto, um .env compartilhado com o Docker quebra
+        # a aplicação em runtime.
+        extra="ignore",
+    )
 
     @property
     def cors_origins_str(self) -> List[str]:

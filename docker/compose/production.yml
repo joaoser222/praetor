@@ -1,0 +1,116 @@
+# =============================================================================
+# Ambiente de PRODUÇÃO
+# =============================================================================
+#
+# Importa os componentes de `base.yml` e adiciona o que é específico de
+# produção:
+#   - imagens multi-stage e imutáveis (sem bind mounts);
+#   - PostgreSQL + serviço `migrate` (efêmero) em vez de SQLite;
+#   - frontend servido por nginx (build estático + proxy /api), não pelo Vite;
+#   - DEBUG desligado e `restart: unless-stopped`.
+#
+# O atalho na raiz (`docker-compose.prod.yml`) importa este arquivo, então a
+# partir da raiz (com .env ajustado; exija SECRET_KEY e POSTGRES_PASSWORD):
+#   docker compose -f docker-compose.prod.yml up --build -d
+#
+# Lê o mesmo .env central da raiz. Endpoints publicados: web em
+# http://localhost:8080 e api em http://localhost:8000 (banco e redis NÃO são
+# expostos para fora da rede interna).
+#
+# Identidade: o nome do projeto recebe o sufixo "-prod" (ex.: praetor-prod) e as
+# imagens viram <PROJECT_NAME>-api:prod / <PROJECT_NAME>-web:prod.
+#
+# CORS: usa o valor do .env central (que já inclui as origens do nginx, 8080).
+# Para restringir em produção, ajuste CORS_ORIGINS no .env.
+#
+# Caminhos relativos são resolvidos a partir desta pasta (`docker/compose/`).
+# =============================================================================
+
+name: ${PROJECT_NAME:-praetor}-prod
+
+include:
+  - base.yml
+
+# --- Overrides do componente BACKEND específicos de produção -----------------
+x-prod-backend-env: &prod-backend-env
+  DEBUG: "False"
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-praetor}:${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}@db:5432/${POSTGRES_DB:-praetor}
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-praetor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: ${POSTGRES_DB:-praetor}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-praetor} -d ${POSTGRES_DB:-praetor}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    restart: unless-stopped
+
+  # Serviço efêmero: aplica as migrations e encerra antes de a api subir.
+  # Reaproveita a imagem construída pelo serviço `api`.
+  migrate:
+    image: ${PROJECT_NAME:-praetor}-api:prod
+    command: ["python", "manage.py", "db:migrate"]
+    env_file:
+      - ../../.env
+    environment: *prod-backend-env
+    # Efêmero: encerra assim que aplica as migrations; o HEALTHCHECK da imagem
+    # não faz sentido aqui.
+    healthcheck:
+      disable: true
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    image: ${PROJECT_NAME:-praetor}-api:prod
+    build:
+      dockerfile: docker/Dockerfile.prod
+    restart: unless-stopped
+    environment: *prod-backend-env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    image: ${PROJECT_NAME:-praetor}-api:prod
+    restart: unless-stopped
+    environment: *prod-backend-env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    image: ${PROJECT_NAME:-praetor}-web:prod
+    build:
+      dockerfile: ../docker/Dockerfile.web.prod
+      args:
+        # Mesma origem: o nginx faz proxy de /api para o serviço "api".
+        VITE_API_URL: /api
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

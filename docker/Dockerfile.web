@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1
+#
+# Imagem de DESENVOLVIMENTO do frontend.
+#
+# Serve o app com o dev server do Vite (HMR). O contexto de build é a pasta
+# ./web e o código-fonte é montado em runtime via bind mount (ver
+# docker-compose.yml), mantendo o node_modules instalado em um volume anônimo.
+#
+#   docker build -f Dockerfile.web -t praetor-web web
+#   docker compose up --build
+
+FROM node:22-slim
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host"]

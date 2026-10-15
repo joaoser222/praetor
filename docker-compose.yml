@@ -1,0 +1,9 @@
+# Atalho para o ambiente de DESENVOLVIMENTO (definido em docker/compose/develop.yml).
+# Existe para que `docker compose up` funcione a partir da raiz do projeto.
+#
+# O `name` é repetido de propósito: o Compose NÃO propaga o top-level `name` de
+# um arquivo incluído, então aqui ele precisa ser declarado de novo.
+name: ${PROJECT_NAME:-praetor}
+
+include:
+  - docker/compose/develop.yml

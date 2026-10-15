@@ -1,0 +1,91 @@
+# =============================================================================
+# Componentes compartilhados da stack (backend, frontend e infraestrutura)
+# =============================================================================
+#
+# Este arquivo NÃO representa um ambiente: ele define os componentes
+# reutilizáveis (backend: `api` e `worker`; frontend: `web`; infra: `redis`).
+# Os ambientes o importam via `include:` e sobrescrevem apenas o que difere:
+#
+#   docker/compose/develop.yml      -> ambiente develop
+#   docker/compose/production.yml   -> ambiente production
+#
+# Os atalhos na raiz (`docker-compose.yml` e `docker-compose.prod.yml`) apenas
+# importam esses ambientes, para que `docker compose up` funcione de qualquer um
+# dos dois pontos.
+#
+# Identidade: o nome do projeto Compose, das imagens e dos containers vem da
+# variável PROJECT_NAME do .env central (slug em minúsculas), com fallback para
+# "praetor". Para reaproveitar o boilerplate noutro projeto, basta trocá-la.
+#
+# Variáveis de ambiente: todas vêm do .env central (raiz) via `env_file`. O
+# bloco `environment` abaixo sobrescreve somente o que precisa ser diferente
+# DENTRO da rede do compose (os serviços conversam pelo nome do serviço).
+#
+# Caminhos: em `include`, TODOS os caminhos relativos (context, dockerfile,
+# env_file, volumes) são resolvidos a partir da pasta DESTE arquivo
+# (`docker/compose/`), por isso usamos `../..` para chegar à raiz do projeto.
+# =============================================================================
+
+# --- Componente BACKEND: overrides de ambiente comuns a `api` e `worker` ------
+x-backend-env: &backend-env
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/1
+
+# --- Componente FRONTEND: variáveis de runtime do servidor do Vite (develop) --
+x-frontend-env: &frontend-env
+  VITE_APP_NAME: ${APP_NAME:-Praetor}
+  VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api}
+
+services:
+  # ------------------------------ infraestrutura -----------------------------
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # -------------------------------- backend ----------------------------------
+  # No backend, apenas `api` declara `build`: `worker` (e o `migrate` de
+  # produção) reaproveitam a MESMA imagem, evitando builds duplicados.
+  api:
+    image: ${PROJECT_NAME:-praetor}-api
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../../.env
+    environment: *backend-env
+    depends_on:
+      redis:
+        condition: service_started
+
+  worker:
+    image: ${PROJECT_NAME:-praetor}-api
+    command: ["celery", "-A", "core.celery_app.celery_app", "worker", "--loglevel=info"]
+    env_file:
+      - ../../.env
+    environment: *backend-env
+    # A imagem do backend traz um HEALTHCHECK de HTTP (porta 8000) que não se
+    # aplica ao worker; aqui o teste é o ping do próprio Celery.
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A core.celery_app.celery_app inspect ping -t 10"]
+      interval: 30s
+      timeout: 15s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      redis:
+        condition: service_started
+
+  # -------------------------------- frontend ---------------------------------
+  web:
+    image: ${PROJECT_NAME:-praetor}-web
+    build:
+      context: ../../web
+      dockerfile: ../docker/Dockerfile.web
+    environment: *frontend-env
+    depends_on:
+      api:
+        condition: service_started
