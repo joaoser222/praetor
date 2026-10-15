@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { notifications } from '@mantine/notifications';
 import { {{ name }}Service } from '../service';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Button, Center, Group, Loader, Paper, Text, Title } from '@mantine/core';
 import { commonMessages } from '@/lib/i18n';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable } from '@/components/DataTable';
 import type { ColumnDef } from '@tanstack/react-table';
 
 export const {{ class_name }}List: React.FC = () => {
@@ -22,7 +22,8 @@ export const {{ class_name }}List: React.FC = () => {
       const data = await {{ name }}Service.getAll();
       setItems(data);
     } catch (error) {
-      console.error('Failed to load items', error);
+      console.error('Falha ao carregar os itens', error);
+      notifications.show({ message: commonMessages.loadFailed, color: 'red' });
     } finally {
       setLoading(false);
     }
@@ -34,7 +35,8 @@ export const {{ class_name }}List: React.FC = () => {
         await {{ name }}Service.delete(id);
         setItems(items.filter(item => item.id !== id));
       } catch (error) {
-        console.error('Failed to delete item', error);
+        console.error('Falha ao excluir o item', error);
+        notifications.show({ message: commonMessages.deleteFailed, color: 'red' });
       }
     }
   };
@@ -43,58 +45,60 @@ export const {{ class_name }}List: React.FC = () => {
     {
       accessorKey: 'id',
       header: 'ID',
-      cell: ({ row }) => <span className="font-mono text-xs text-muted-foreground">#{row.getValue('id')}</span>,
+      cell: ({ row }) => <Text size="xs" c="dimmed" ff="monospace">#{row.getValue('id')}</Text>,
     },
     {
       accessorKey: 'name',
-      header: 'Name',
-      cell: ({ row }) => <span className="font-medium">{row.getValue('name') || 'N/A'}</span>,
+      header: 'Nome',
+      cell: ({ row }) => <Text fw={500}>{row.getValue('name') || 'N/A'}</Text>,
     },
     {
       id: 'actions',
-      header: () => <div className="text-right">{commonMessages.actions}</div>,
+      header: () => <Text ta="right">{commonMessages.actions}</Text>,
       cell: ({ row }) => (
-        <div className="flex justify-end gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 text-muted-foreground hover:text-primary" 
+        <Group justify="flex-end" gap="xs">
+          <Button
+            variant="subtle"
+            size="compact-sm"
             title={commonMessages.edit}
             onClick={() => navigate(`/{{ plural_name }}/${row.original.id}/edit`)}
           >
             <Edit size={16} />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-            onClick={() => handleDelete(row.original.id)}
+          <Button
+            variant="subtle"
+            color="red"
+            size="compact-sm"
             title={commonMessages.delete}
+            onClick={() => handleDelete(row.original.id)}
           >
             <Trash2 size={16} />
           </Button>
-        </div>
+        </Group>
       ),
     },
   ], [items]);
 
-  if (loading) return <div className="p-8 text-center">{commonMessages.loading}</div>;
+  if (loading) {
+    return (
+      <Center mih={200}>
+        <Loader />
+      </Center>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{{ plural_name | capitalize }}</h1>
-        <Button className="gap-2" onClick={() => navigate('/{{ plural_name }}/new')}>
-          <Plus size={18} />
+    <div>
+      <Group justify="space-between" mb="lg">
+        <Title order={2} tt="capitalize">{{ plural_name }}</Title>
+        <Button leftSection={<Plus size={18} />} onClick={() => navigate('/{{ plural_name }}/new')}>
           {commonMessages.add} {{ class_name }}
         </Button>
-      </div>
+      </Group>
 
-      <Card>
-        <CardContent className="p-6">
-          <DataTable columns={columns} data={items} />
-        </CardContent>
-      </Card>
+      <Paper withBorder radius="md" p="md">
+        <DataTable columns={columns} data={items} />
+      </Paper>
     </div>
   );
 };

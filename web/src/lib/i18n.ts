@@ -1,22 +1,25 @@
 /**
- * Global messages for the entire application.
- * Generic strings that apply to all features (CRUD actions, common UI elements, etc.)
+ * Mensagens globais para toda a aplicação.
+ * Strings genéricas que se aplicam a todas as features (ações de CRUD, elementos comuns de UI, etc.)
  */
 export const zodMessages = {
-    required: (field: string) => `${field} is required`,
-    invalidEmail: 'Invalid email address',
-    tooShort: (field: string, min: number) => `${field} must be at least ${min} characters`,
-    tooLong: (field: string, max: number) => `${field} must be at most ${max} characters`,
+    required: (field: string) => `${field} é obrigatório`,
+    invalidEmail: 'Endereço de e-mail inválido',
+    tooShort: (field: string, min: number) => `${field} deve ter pelo menos ${min} caracteres`,
+    tooLong: (field: string, max: number) => `${field} deve ter no máximo ${max} caracteres`,
 };
 
 export const commonMessages = {
-    loading: 'Loading...',
-    actions: 'Actions',
-    delete: 'Delete',
-    edit: 'Edit',
-    save: 'Save',
-    cancel: 'Cancel',
-    confirmDelete: 'Are you sure you want to delete this item?',
-    noItems: 'No items found.',
-    add: 'Add New',
+    loading: 'Carregando...',
+    actions: 'Ações',
+    delete: 'Excluir',
+    edit: 'Editar',
+    save: 'Salvar',
+    cancel: 'Cancelar',
+    confirmDelete: 'Tem certeza de que deseja excluir este item?',
+    noItems: 'Nenhum item encontrado.',
+    add: 'Adicionar novo',
+    saveFailed: 'Não foi possível salvar. Tente novamente.',
+    deleteFailed: 'Não foi possível excluir. Tente novamente.',
+    loadFailed: 'Não foi possível carregar os dados.',
 };

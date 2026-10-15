@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { notifications } from '@mantine/notifications';
+import { Center, Container, Loader, Title } from '@mantine/core';
 import { {{ name }}Service } from '../service';
 import { {{ class_name }}Form } from '../components/Form';
 import { {{ class_name }}FormValues } from '../schema';
@@ -23,7 +25,8 @@ export const {{ class_name }}Update: React.FC = () => {
       const data = await {{ name }}Service.getOne(recordId);
       setInitialData(data);
     } catch (error) {
-      console.error('Failed to load record', error);
+      console.error('Falha ao carregar o registro', error);
+      notifications.show({ message: commonMessages.loadFailed, color: 'red' });
       navigate('/{{ plural_name }}');
     } finally {
       setIsLoading(false);
@@ -37,30 +40,33 @@ export const {{ class_name }}Update: React.FC = () => {
       await {{ name }}Service.update(id, data);
       navigate('/{{ plural_name }}');
     } catch (error) {
-      console.error('Failed to update', error);
+      console.error('Falha ao atualizar', error);
+      notifications.show({ message: commonMessages.saveFailed, color: 'red' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading) return <div className="p-8 text-center">{commonMessages.loading}</div>;
+  if (isLoading) {
+    return (
+      <Center mih={200}>
+        <Loader />
+      </Center>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          {commonMessages.edit} {{ class_name }}
-        </h1>
-      </div>
+    <Container size="sm">
+      <Title order={2} mb="lg">
+        {commonMessages.edit} {{ class_name }}
+      </Title>
 
-      <div className="max-w-2xl">
-        <{{ class_name }}Form 
-          initialData={initialData}
-          onSubmit={handleSubmit} 
-          onCancel={() => navigate('/{{ plural_name }}')}
-          isLoading={isSubmitting} 
-        />
-      </div>
-    </div>
+      <{{ class_name }}Form
+        initialData={initialData}
+        onSubmit={handleSubmit}
+        onCancel={() => navigate('/{{ plural_name }}')}
+        isLoading={isSubmitting}
+      />
+    </Container>
   );
 };

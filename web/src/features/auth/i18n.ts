@@ -1,9 +1,9 @@
 export const authMessages = {
     loginTitle: 'Praetor',
-    loginSubtitle: 'Sign in to your account to continue',
-    emailLabel: 'Email address',
-    passwordLabel: 'Password',
-    signInButton: 'Sign in',
-    loginSuccess: 'Welcome back!',
-    loginFailed: 'Login failed',
+    loginSubtitle: 'Entre na sua conta para continuar',
+    emailLabel: 'Endereço de e-mail',
+    passwordLabel: 'Senha',
+    signInButton: 'Entrar',
+    loginSuccess: 'Bem-vindo de volta!',
+    loginFailed: 'Falha no login',
 };

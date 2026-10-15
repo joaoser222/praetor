@@ -23,7 +23,7 @@ export const authService = {
 
     async logout() {
         localStorage.removeItem('access_token');
-        // Optional: call logout endpoint if you want to revoke refresh token
+        // Opcional: chamar o endpoint de logout se quiser revogar o token de refresh
     },
 
     async getProfile() {

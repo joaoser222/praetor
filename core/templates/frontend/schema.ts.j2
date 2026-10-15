@@ -2,7 +2,7 @@ import * as z from 'zod';
 import { zodMessages } from '@/lib/i18n';
 
 export const {{ name }}Schema = z.object({
-  name: z.string().min(1, zodMessages.required('Name')),
+  name: z.string().min(1, zodMessages.required('Nome')),
 });
 
 export type {{ class_name }}FormValues = z.infer<typeof {{ name }}Schema>;

@@ -1,11 +1,12 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { AppShell } from '@mantine/core';
 import LoginPage from '@/features/auth/action/pages/LoginPage';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 
 // ----------------------------------------------------------------------
-// Dynamic Route Discovery
+// Descoberta dinâmica de rotas
 // ----------------------------------------------------------------------
 const featureModules = import.meta.glob('./features/**/routes.tsx', { eager: true });
 
@@ -27,7 +28,7 @@ const allRoutes: RouteConfig[] = Object.values(featureModules).flatMap((module: 
 });
 
 // ----------------------------------------------------------------------
-// Auth Guard
+// Proteção de autenticação
 // ----------------------------------------------------------------------
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = !!localStorage.getItem('access_token');
@@ -42,37 +43,40 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-background font-sans antialiased">
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
 
-          <Route path="/panel/*" element={
-            <PrivateRoute>
-              <div className="flex min-h-screen">
+        <Route path="/panel/*" element={
+          <PrivateRoute>
+            <AppShell
+              header={{ height: 64 }}
+              navbar={{ width: 260, breakpoint: 'sm' }}
+              padding="md"
+            >
+              <AppShell.Header>
+                <Header />
+              </AppShell.Header>
+
+              <AppShell.Navbar p="xs">
                 <Sidebar routes={allRoutes} onLogout={handleLogout} />
+              </AppShell.Navbar>
 
-                <div className="flex-1 flex flex-col overflow-hidden">
-                  <Header />
+              <AppShell.Main>
+                <Routes>
+                  {allRoutes.map((route) => {
+                    const relativePath = route.path === '/panel' ? '' : route.path.replace('/panel/', '');
+                    return <Route key={route.path} path={relativePath} element={route.element} />;
+                  })}
+                  <Route path="*" element={<Navigate to="/panel" replace />} />
+                </Routes>
+              </AppShell.Main>
+            </AppShell>
+          </PrivateRoute>
+        } />
 
-                  <main className="flex-1 overflow-auto p-6 bg-gray-50/50">
-                    <Routes>
-                      {allRoutes.map((route) => {
-                        const relativePath = route.path === '/panel' ? '' : route.path.replace('/panel/', '');
-                        return <Route key={route.path} path={relativePath} element={route.element} />;
-                      })}
-                      <Route path="*" element={<Navigate to="/panel" replace />} />
-                    </Routes>
-                  </main>
-                </div>
-              </div>
-            </PrivateRoute>
-          } />
-
-          <Route path="/" element={<Navigate to="/panel" replace />} />
-          <Route path="*" element={<Navigate to="/panel" replace />} />
-        </Routes>
-      </div>
-      <Toaster position="top-right" />
+        <Route path="/" element={<Navigate to="/panel" replace />} />
+        <Route path="*" element={<Navigate to="/panel" replace />} />
+      </Routes>
     </Router>
   );
 }

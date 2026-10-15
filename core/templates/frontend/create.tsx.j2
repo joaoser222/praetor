@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { notifications } from '@mantine/notifications';
+import { Container, Title } from '@mantine/core';
 import { {{ name }}Service } from '../service';
 import { {{ class_name }}Form } from '../components/Form';
 import { {{ class_name }}FormValues } from '../schema';
@@ -15,27 +17,24 @@ export const {{ class_name }}Create: React.FC = () => {
       await {{ name }}Service.create(data);
       navigate('/{{ plural_name }}');
     } catch (error) {
-      console.error('Failed to create', error);
+      console.error('Falha ao criar', error);
+      notifications.show({ message: commonMessages.saveFailed, color: 'red' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          {commonMessages.add} {{ class_name }}
-        </h1>
-      </div>
+    <Container size="sm">
+      <Title order={2} mb="lg">
+        {commonMessages.add} {{ class_name }}
+      </Title>
 
-      <div className="max-w-2xl">
-        <{{ class_name }}Form 
-          onSubmit={handleSubmit} 
-          onCancel={() => navigate('/{{ plural_name }}')}
-          isLoading={isSubmitting} 
-        />
-      </div>
-    </div>
+      <{{ class_name }}Form
+        onSubmit={handleSubmit}
+        onCancel={() => navigate('/{{ plural_name }}')}
+        isLoading={isSubmitting}
+      />
+    </Container>
   );
 };
