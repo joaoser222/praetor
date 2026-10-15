@@ -33,7 +33,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
+        pip install -e ".[dev]"
 
     - name: Create .env file
       run: cp .env.example .env
@@ -86,7 +86,7 @@ jobs:
     - name: Install backend dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install .
 
     - name: Create .env file
       run: cp .env.example .env
