@@ -71,5 +71,8 @@ When you run `make:entity`, the system automatically generates:
 To run the entire ecosystem (API, Postgres, Redis, Celery, Frontend) in a production-ready environment:
 
 ```bash
+cp docker-compose.example.yml docker-compose.yml
+cp Dockerfile.example Dockerfile
+cp Dockerfile.web.example Dockerfile.web
 docker-compose up --build
 ```

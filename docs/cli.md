@@ -6,7 +6,7 @@ The `manage.py` utility is the primary tool for managing the lifecycle of your a
 
 - `python manage.py run:server`: Starts the Uvicorn dev server.
 - `python manage.py shell`: Starts an interactive Python shell with the app context.
-- `python manage.py test`: Runs the test suite with `pytest`.
+- `python manage.py run:test [app]`: Runs the test suite with `pytest`.
 
 ## Database Management
 

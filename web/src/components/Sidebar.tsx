@@ -11,11 +11,12 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ routes, onLogout }) => {
     const location = useLocation();
+    const appName = import.meta.env.VITE_APP_NAME || 'Praetor';
 
     return (
         <Flex direction="column" h="100%" justify="space-between">
             <div>
-                <Text fw={700} size="xl" c="blue" px="sm" py="md">Praetor</Text>
+                <Text fw={700} size="xl" c="blue" px="sm" py="md">{appName}</Text>
 
                 <Stack gap={4}>
                     {routes.filter(r => r.showInSidebar).map((route) => {

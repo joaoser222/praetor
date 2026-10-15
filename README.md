@@ -73,6 +73,9 @@ python manage.py make:entity product --app store
 
 Running with Docker (Recommended):
 ```bash
+cp docker-compose.example.yml docker-compose.yml
+cp Dockerfile.example Dockerfile
+cp Dockerfile.web.example Dockerfile.web
 docker-compose up --build
 ```
 *API available at `http://localhost:8000`, Frontend at `http://localhost:5173`.*
