@@ -1,7 +1,6 @@
 import click
 import uvicorn
 import subprocess
-import pytest
 import os
 from config.settings import settings
 
@@ -31,5 +30,9 @@ def run_worker(loglevel: str):
 @click.argument("app_name", required=False) # type: ignore
 def run_test(app_name: str | None):
     """Executa os testes, opcionalmente de um app específico."""
+    # Import local: 'pytest' é dependência de dev e não deve ser exigida
+    # para executar os demais comandos do CLI (ex.: make:*, db:*).
+    import pytest
+
     test_path = f"apps/{app_name}/tests" if app_name and os.path.exists(f"apps/{app_name}/tests") else "tests/"
     pytest.main(["-v", test_path])
