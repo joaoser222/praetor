@@ -2,6 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
+import { isAxiosError } from 'axios';
 import { Lock, Mail } from 'lucide-react';
 import { notifications } from '@mantine/notifications';
 import {
@@ -30,9 +31,12 @@ const LoginPage: React.FC = () => {
             await authService.login(data);
             notifications.show({ message: authMessages.loginSuccess, color: 'green' });
             navigate('/');
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const detail = isAxiosError(error)
+                ? (error.response?.data as { detail?: string } | undefined)?.detail
+                : undefined;
             notifications.show({
-                message: error.response?.data?.detail || authMessages.loginFailed,
+                message: detail || authMessages.loginFailed,
                 color: 'red',
             });
         }

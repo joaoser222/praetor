@@ -2,9 +2,10 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { Button, Flex, NavLink, Stack, Text } from '@mantine/core';
+import type { RouteConfig } from '@/lib/routes';
 
 interface SidebarProps {
-    routes: any[];
+    routes: RouteConfig[];
     onLogout: () => void;
 }
 

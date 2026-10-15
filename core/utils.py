@@ -9,6 +9,24 @@ from config.logging import logger
 from core.apps import app_registry
 
 
+def import_app_models(app_config) -> None:
+    """
+    Importa o pacote de models de um app para popular os metadados do SQLAlchemy.
+
+    Os metadados só são preenchidos quando as classes de modelo são importadas.
+    Sem esta importação, comandos como 'db:create' e o 'create_all' dos testes
+    não enxergam as tabelas.
+
+    Args:
+        app_config: Instância de BaseAppConfig cujo pacote de models será importado.
+    """
+    models_module = f"{app_config.module_path}.models"
+    try:
+        importlib.import_module(models_module)
+    except ImportError as e:
+        logger.warning(f"App '{app_config.name}' has no importable models: {e}")
+
+
 def auto_discover_apps():
     """
     Descobre e registra automaticamente todos os apps do diretório 'apps'.
@@ -34,6 +52,8 @@ def auto_discover_apps():
                 if hasattr(module, "app_config"):
                     app_config_instance = getattr(module, "app_config")
                     app_registry.register(app_config_instance)
+                    # Popula os metadados do SQLAlchemy com os models deste app.
+                    import_app_models(app_config_instance)
                     logger.info(f"App '{app_config_instance.name}' registered successfully.")
             except ImportError as e:
                 logger.error(f"Failed to import app '{app_path.name}': {e}")

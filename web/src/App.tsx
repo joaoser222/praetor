@@ -4,24 +4,18 @@ import { AppShell } from '@mantine/core';
 import LoginPage from '@/features/auth/action/pages/LoginPage';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
+import type { RouteConfig } from '@/lib/routes';
 
 // ----------------------------------------------------------------------
 // Descoberta dinâmica de rotas
 // ----------------------------------------------------------------------
 const featureModules = import.meta.glob('./features/**/routes.tsx', { eager: true });
 
-interface RouteConfig {
-  path: string;
-  element: React.ReactNode;
-  label: string;
-  icon: any;
-  showInSidebar?: boolean;
-}
-
-const allRoutes: RouteConfig[] = Object.values(featureModules).flatMap((module: any) => {
-  const exportName = Object.keys(module).find(key => key.endsWith('Routes'));
-  const routes = exportName ? module[exportName] : [];
-  return routes.map((r: RouteConfig) => ({
+const allRoutes: RouteConfig[] = Object.values(featureModules).flatMap((module) => {
+  const featureModule = module as Record<string, unknown>;
+  const exportName = Object.keys(featureModule).find(key => key.endsWith('Routes'));
+  const routes = (exportName ? featureModule[exportName] : []) as RouteConfig[];
+  return routes.map((r) => ({
     ...r,
     path: r.path === '/' ? '/panel' : `/panel${r.path.startsWith('/') ? r.path : '/' + r.path}`
   }));

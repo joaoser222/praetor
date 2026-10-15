@@ -1,9 +1,8 @@
 import api from '@/lib/api';
-
-
+import type { LoginFormValues } from './schema';
 
 export const authService = {
-    async login(credentials: any) {
+    async login(credentials: LoginFormValues) {
         const formData = new FormData();
         formData.append('username', credentials.email);
         formData.append('password', credentials.password);

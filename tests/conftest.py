@@ -1,36 +1,30 @@
-import asyncio
 from typing import AsyncGenerator
 
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from config.database import get_db
 from core.base_model import BaseModel
+
+# Importar a aplicação dispara a auto-descoberta dos apps e,
+# consequentemente, a importação dos models (populando BaseModel.metadata).
 from main import app
 
-# Usa um banco de dados SQLite em memória para os testes
+# Banco de dados SQLite em arquivo dedicado aos testes.
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 
-engine = create_async_engine(TEST_DATABASE_URL, echo=True)
-TestingSessionLocal = sessionmaker(
-    autocommit=False, autoflush=False, bind=engine, class_=AsyncSession
+engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+TestingSessionLocal = async_sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
 )
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Cria uma instância do event loop padrão para cada sessão de testes."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def db() -> AsyncGenerator[AsyncSession, None]:
-    """Fixture que cria uma nova sessão de banco de dados para cada teste."""
+    """Cria um banco limpo e fornece uma sessão para cada teste."""
     async with engine.begin() as conn:
+        await conn.run_sync(BaseModel.metadata.drop_all)
         await conn.run_sync(BaseModel.metadata.create_all)
 
     async with TestingSessionLocal() as session:
@@ -40,10 +34,15 @@ async def db() -> AsyncGenerator[AsyncSession, None]:
         await conn.run_sync(BaseModel.metadata.drop_all)
 
 
+@pytest_asyncio.fixture(scope="function")
+async def client(db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """Fornece um cliente HTTP assíncrono com a dependência de banco sobrescrita."""
 
-@pytest.fixture(scope="function")
-def client(db: AsyncSession) -> TestClient:
-    """Fixture que cria um TestClient com a dependência de banco de dados sobrescrita."""
-    app.dependency_overrides[get_db] = lambda: db
-    with TestClient(app) as c:
-        yield c
+    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+        yield db
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as http_client:
+        yield http_client
+    app.dependency_overrides.clear()
