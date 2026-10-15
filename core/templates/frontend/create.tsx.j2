@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notifications } from '@mantine/notifications';
 import { Container, Title } from '@mantine/core';
 import { {{ name }}Service } from '../service';
 import { {{ class_name }}Form } from '../components/Form';
-import { {{ class_name }}FormValues } from '../schema';
+import type { {{ class_name }}FormValues } from '../schema';
 import { commonMessages } from '@/lib/i18n';
 
 export const {{ class_name }}Create: React.FC = () => {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = async (data: {{ class_name }}FormValues) => {
     setIsSubmitting(true);

@@ -1,29 +1,30 @@
 import pytest
 from fastapi import status
 
+
 @pytest.mark.asyncio
 async def test_get_all_{{ name }}(client):
     """
     Testa o endpoint de listagem de {{ class_name }}.
-    Observação: talvez seja necessário simular (mock) 'require_permission' se você
-    não tiver configurado um usuário com permissões no banco de dados de teste.
+
+    Sem autenticação (ou sem permissão), a resposta deve ser 401/403.
     """
-    # Ignora a verificação de permissão para testes, se necessário:
-    # from main import app
-    # from core.dependencies import require_permission
-    # app.dependency_overrides[require_permission("{{ name }}:list")] = lambda: None
-    
-    response = client.get("/api/{{ app_name }}/{{ name }}/")
-    
-    # Se estiver usando RBAC, isto pode retornar 403 se não estiver autenticado.
-    # Serve como lembrete para tratar autenticação nos testes.
-    assert response.status_code in [status.HTTP_200_OK, status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
+    response = await client.get("/api/{{ app_name }}/{{ name }}/")
+    assert response.status_code in [
+        status.HTTP_200_OK,
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+    ]
+
 
 @pytest.mark.asyncio
 async def test_create_{{ name }}_unauthorized(client):
     """
     Verifica que criar um {{ name }} exige autenticação/permissão.
     """
-    payload = {} # Deve ser preenchido com dados válidos com base no schema
-    response = client.post("/api/{{ app_name }}/{{ name }}/", json=payload)
-    assert response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN, status.HTTP_422_UNPROCESSABLE_ENTITY]
+    response = await client.post("/api/{{ app_name }}/{{ name }}/", json={})
+    assert response.status_code in [
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+    ]

@@ -131,7 +131,7 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
         "service": ("entity/service.py.j2", f"services/{name}.py", "services", context["service_name"]),
         "router": ("entity/router.py.j2", f"routers/{name}.py", None, None),
         "permission": ("entity/permission.py.j2", f"permissions/{name}.py", None, None),
-        "test": ("entity/test.py.j2", f"tests/{name}.py", None, None),
+        "test": ("entity/test.py.j2", f"tests/test_{name}.py", None, None),
     }
 
     # Arquivos de frontend (apenas se o diretório web existir)
@@ -141,6 +141,9 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
         all_template_files.update({
             "fe_service": ("frontend/service.ts.j2", os.path.join(feature_path, "service.ts"), None, None),
             "fe_list": ("frontend/list.tsx.j2", os.path.join(feature_path, "pages", "List.tsx"), None, None),
+            "fe_create": ("frontend/create.tsx.j2", os.path.join(feature_path, "pages", "Create.tsx"), None, None),
+            "fe_update": ("frontend/update.tsx.j2", os.path.join(feature_path, "pages", "Update.tsx"), None, None),
+            "fe_form": ("frontend/form.tsx.j2", os.path.join(feature_path, "components", "Form.tsx"), None, None),
             "fe_routes": ("frontend/routes.tsx.j2", os.path.join(feature_path, "routes.tsx"), None, None),
             "fe_types": ("frontend/types.ts.j2", os.path.join(feature_path, "types.ts"), None, None),
             "fe_schema": ("frontend/schema.ts.j2", os.path.join(feature_path, "schema.ts"), None, None),

@@ -1,39 +1,46 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notifications } from '@mantine/notifications';
-import { {{ name }}Service } from '../service';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Button, Center, Group, Loader, Paper, Text, Title } from '@mantine/core';
+import type { ColumnDef } from '@tanstack/react-table';
+import { {{ name }}Service } from '../service';
 import { commonMessages } from '@/lib/i18n';
 import { DataTable } from '@/components/DataTable';
-import type { ColumnDef } from '@tanstack/react-table';
+
+interface {{ class_name }}Row {
+  id: number;
+  [key: string]: unknown;
+}
 
 export const {{ class_name }}List: React.FC = () => {
   const navigate = useNavigate();
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<{{ class_name }}Row[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadItems();
+    let active = true;
+    (async () => {
+      try {
+        const data = await {{ name }}Service.getAll();
+        if (active) setItems(data);
+      } catch (error) {
+        console.error('Falha ao carregar os itens', error);
+        notifications.show({ message: commonMessages.loadFailed, color: 'red' });
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
-
-  const loadItems = async () => {
-    try {
-      const data = await {{ name }}Service.getAll();
-      setItems(data);
-    } catch (error) {
-      console.error('Falha ao carregar os itens', error);
-      notifications.show({ message: commonMessages.loadFailed, color: 'red' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async (id: number) => {
     if (window.confirm(commonMessages.confirmDelete)) {
       try {
         await {{ name }}Service.delete(id);
-        setItems(items.filter(item => item.id !== id));
+        setItems((previous) => previous.filter((item) => item.id !== id));
       } catch (error) {
         console.error('Falha ao excluir o item', error);
         notifications.show({ message: commonMessages.deleteFailed, color: 'red' });
@@ -41,43 +48,47 @@ export const {{ class_name }}List: React.FC = () => {
     }
   };
 
-  const columns = useMemo<ColumnDef<any>[]>(() => [
-    {
-      accessorKey: 'id',
-      header: 'ID',
-      cell: ({ row }) => <Text size="xs" c="dimmed" ff="monospace">#{row.getValue('id')}</Text>,
-    },
-    {
-      accessorKey: 'name',
-      header: 'Nome',
-      cell: ({ row }) => <Text fw={500}>{row.getValue('name') || 'N/A'}</Text>,
-    },
-    {
-      id: 'actions',
-      header: () => <Text ta="right">{commonMessages.actions}</Text>,
-      cell: ({ row }) => (
-        <Group justify="flex-end" gap="xs">
-          <Button
-            variant="subtle"
-            size="compact-sm"
-            title={commonMessages.edit}
-            onClick={() => navigate(`/{{ plural_name }}/${row.original.id}/edit`)}
-          >
-            <Edit size={16} />
-          </Button>
-          <Button
-            variant="subtle"
-            color="red"
-            size="compact-sm"
-            title={commonMessages.delete}
-            onClick={() => handleDelete(row.original.id)}
-          >
-            <Trash2 size={16} />
-          </Button>
-        </Group>
-      ),
-    },
-  ], [items]);
+  const columns = useMemo<ColumnDef<{{ class_name }}Row>[]>(
+    () => [
+      {
+        accessorKey: 'id',
+        header: 'ID',
+        cell: ({ row }) => (
+          <Text size="xs" c="dimmed" ff="monospace">
+            #{row.original.id}
+          </Text>
+        ),
+      },
+      // Adicione mais colunas conforme o modelo da entidade.
+      {
+        id: 'actions',
+        header: () => <Text ta="right">{commonMessages.actions}</Text>,
+        cell: ({ row }) => (
+          <Group justify="flex-end" gap="xs">
+            <Button
+              variant="subtle"
+              size="compact-sm"
+              title={commonMessages.edit}
+              onClick={() => navigate(`/{{ plural_name }}/${row.original.id}/edit`)}
+            >
+              <Edit size={16} />
+            </Button>
+            <Button
+              variant="subtle"
+              color="red"
+              size="compact-sm"
+              title={commonMessages.delete}
+              onClick={() => handleDelete(row.original.id)}
+            >
+              <Trash2 size={16} />
+            </Button>
+          </Group>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   if (loading) {
     return (
@@ -90,7 +101,9 @@ export const {{ class_name }}List: React.FC = () => {
   return (
     <div>
       <Group justify="space-between" mb="lg">
-        <Title order={2} tt="capitalize">{{ plural_name }}</Title>
+        <Title order={2} tt="capitalize">
+          {{ plural_name }}
+        </Title>
         <Button leftSection={<Plus size={18} />} onClick={() => navigate('/{{ plural_name }}/new')}>
           {commonMessages.add} {{ class_name }}
         </Button>
