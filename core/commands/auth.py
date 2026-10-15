@@ -1,13 +1,11 @@
 import asyncio
-import os
 import click
 from pathlib import Path
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from apps.auth.schemas.user import UserCreate
 from apps.auth.services.user import UserService
-from apps.auth.models import Permission, Role
+from apps.auth.models import Permission
 from core.utils import PermissionDef
 from config.database import AsyncSessionFactory
 

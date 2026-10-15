@@ -1,8 +1,7 @@
 import api from '@/lib/api';
 
-
 export const {{ name }}Service = {
-  async getAll(params?: any) {
+  async getAll(params?: Record<string, unknown>) {
     const response = await api.get('/{{ app_name }}/{{ name }}/', { params });
     return response.data;
   },
@@ -12,12 +11,12 @@ export const {{ name }}Service = {
     return response.data;
   },
 
-  async create(data: any) {
+  async create(data: Record<string, unknown>) {
     const response = await api.post('/{{ app_name }}/{{ name }}/', data);
     return response.data;
   },
 
-  async update(id: number | string, data: any) {
+  async update(id: number | string, data: Record<string, unknown>) {
     const response = await api.put(`/{{ app_name }}/{{ name }}/${id}`, data);
     return response.data;
   },

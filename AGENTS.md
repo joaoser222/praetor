@@ -9,6 +9,15 @@ Boilerplate full-stack: backend **FastAPI** (apps modulares, camadas repository/
 - Textos exibidos ao usuário no frontend são em **português**, exceto termos já consagrados em inglês (ex.: "internet", "web", "surf").
 - Nome do projeto: **Praetor**.
 
+## Gitflow (branches e commits)
+Documentação detalhada em `CONTRIBUTING.md`; resumo operacional:
+- Modelo: **Gitflow completo**. Branches longevas: `master` (produção, tagueada `vX.Y.Z`) e `develop` (integração). **Nunca** commitar direto nelas — sempre via Pull Request.
+- Branches de apoio: `feature/<nome>` (de/para `develop`), `bugfix/<nome>` (opcional, de/para `develop`), `release/<X.Y.Z>` (de `develop`; merge em `master` **e** `develop`, com tag) e `hotfix/<X.Y.Z>` (de `master`; merge em `master` **e** `develop`, com tag).
+- Merges de feature/hotfix usam `--no-ff`; apague a branch após o merge. PRs de feature/bugfix miram `develop`; os de release/hotfix miram `master`.
+- Commits seguem a **Angular Convention** com descrição em **pt-BR** e ≤ 72 caracteres (ver `.agents/skills/git-commit/SKILL.md`), ex.: `fix(auth): corrige expiração do token`.
+- CI obrigatório antes do merge: jobs `backend` (`ruff check .` + `pytest`), `frontend` (`npm run lint` + `npm run build`) e `codegen` (`make:app`/`make:entity` + build).
+- Bootstrap (a branch `develop` ainda não existe): `git branch develop master && git push -u origin develop`.
+
 ## Configuração do ambiente
 - `config/settings.py` exige `DATABASE_URL` e `SECRET_KEY` (sem valores padrão). Sem eles, **qualquer** import do backend falha. Faça `cp .env.example .env` (o exemplo já aponta para SQLite em `./default.db`), ou exporte as duas variáveis.
 - Para a maior parte do trabalho de backend/CLI isto basta:
@@ -23,19 +32,22 @@ Rode `python manage.py --help` para a lista real. Os comandos são registrados *
 - Worker: `python manage.py run:worker` (Celery; precisa de Redis)
 - Frontend (`web/`): `npm install`, `npm run dev`, `npm run build` (`tsc -b && vite build`), `npm run lint`
 - Testes: `pytest` (como no CI) ou `python manage.py run:test [app]`. O `python manage.py test` da documentação **não existe**.
+- Lint de backend: `ruff check .` (config em `pyproject.toml`; `ruff` está em `requirements-dev.txt`).
+- Dependências: runtime em `requirements.txt`, ferramentas de dev/teste em `requirements-dev.txt` (`-r requirements.txt` + `pytest`, `httpx`, `ruff`, `ipython`).
 
-## Realidade dos testes
-- CI (`.github/workflows/ci.yml`): Python 3.10, `pip install -r requirements.txt`, `cp .env.example .env`, `pytest`, com um serviço Redis. Dispara em push/PR para `main`/`master`.
-- Praticamente não há suíte de testes: o `pytest` na raiz não coleta nada, e `apps/*/tests/*.py` e `tests/` são stubs/placeholders.
-- As fixtures estão quebradas como estão: `tests/conftest.py` declara a fixture assíncrona `db` com `@pytest.fixture` (e não `@pytest_asyncio.fixture`) e não há `asyncio_mode` configurado, então testes síncronos que dependem dela falham no modo strict do pytest-asyncio. Além disso, ele fica em `tests/`, então testes gerados em `apps/{app}/tests/` não enxergam `client`/`db`. Corrija os decoradores e/ou adicione um `conftest.py` na raiz ou configuração de pytest antes de confiar nisso.
-- `conftest.py` usa SQLite em arquivo (`sqlite+aiosqlite:///./test.db`), cria/derruba todas as tabelas por teste e sobrescreve `get_db`.
+## Testes
+- CI (`.github/workflows/ci.yml`) tem 3 jobs: **backend** (Python 3.12, `pip install -r requirements-dev.txt`, `ruff check .`, `pytest`, com Redis), **frontend** (`npm ci && npm run lint && npm run build`) e **codegen** (roda `make:app sample` + `make:entity product` e depois `npm run build` no `web/`).
+- `pytest` é configurado em `pyproject.toml`: `asyncio_mode = "auto"`, `testpaths = ["tests", "apps"]`, `python_files = ["test_*.py", "*_test.py"]`.
+- `conftest.py` fica **na raiz** (para atender `apps/*/tests`), usa fixtures `pytest_asyncio` + `httpx.AsyncClient` e SQLite em arquivo (`./test.db`), criando/derrubando tabelas por teste e sobrescrevendo `get_db`.
+- O metadata do SQLAlchemy é populado pela auto-descoberta (`core.utils.auto_discover_apps` importa `apps.<app>.models`), então o `create_all` dos testes e o `db:create` enxergam as tabelas.
+- Testes gerados pelo `make:entity` são nomeados `test_<entity>.py` e são coletados.
 
 ## Como a aplicação é montada (auto-descoberta)
 - Apps de backend: qualquer `apps/<name>/` com um `app.py` que exporte `app_config` (um `BaseAppConfig`) é registrado por `core.utils.auto_discover_apps`. Todos os `apps/<name>/routers/*.py` que exponham um `APIRouter` chamado `router` são agregados e montados em `/api/<name>`; cada router adiciona seu próprio prefixo, então os endpoints ficam como `/api/auth/action/login` ou `/api/<app>/<entity>`.
 - CLI: qualquer objeto `click.Command`/`click.Group` em `core/commands/*.py` (ou em `commands/` na raiz) é registrado automaticamente pelo `manage.py`.
 - Permissões: `apps/<name>/permissions/*.py` que exportem `DEFINED_PERMISSIONS` são sincronizadas por `auth:makepermissions`; os endpoints usam `require_permission("<entity>:<action>")` (`core/dependencies.py`).
 - Rotas do frontend: `web/src/App.tsx` faz glob de `./features/**/routes.tsx`; cada arquivo exporta um array `*Routes`. As entradas recebem automaticamente o prefixo `/panel`, então uma rota `path: '/products'` resolve para `/panel/products` — não inclua `/panel` manualmente.
-- Models e migrações: os metadados do SQLAlchemy só são populados pelas importações em `apps/<app>/models/__init__.py`. O `migrations/env.py` importa cada pacote `apps.<app>.models`, então um model que não esteja nesse `__init__.py` fica invisível para o `db:makemigrations`.
+- Models e migrações: `core.utils.auto_discover_apps` importa o pacote `apps.<app>.models` de cada app, o que popula os metadados do SQLAlchemy (usados por `db:create`, pelos testes e pelo `migrations/env.py`). Um model que não esteja no `apps/<app>/models/__init__.py` fica invisível. `migrations/versions/` já contém a migração inicial; o caminho canônico é `db:migrate`.
 - Camadas: routers → services (`core/base_service.py`) → repositories (`core/base_repository.py`); schemas Pydantic em `apps/<app>/schemas/`.
 
 ## Frontend (`web/`)
@@ -49,8 +61,8 @@ Rode `python manage.py --help` para a lista real. Os comandos são registrados *
 - Prefira gerar a escrever à mão. O `make:entity` cria backend (model, schema, repository, service, router, permission, test) e frontend (service, página List, types, schema zod, rotas). Flags: `--minimal`, `--only`/`--except` (subconjunto de componentes), `--no-frontend`, `--table-name`, `--no-prefix`.
 - O nome padrão da tabela é `<app>_<plural(entity)>`.
 - Os arquivos gerados `schemas/<entity>.py` e `types.ts` são stubs; adicione os campos, ou rode `generate:schemas <entity> --app <app>` para reconstruir os schemas Pydantic a partir do model SQLAlchemy.
-- Os templates de frontend em `core/templates/frontend/` geram componentes Mantine (`Paper`, `TextInput`, `Button`, `Table` via `DataTable`, `notifications`).
-- ⚠️ Lacuna de geração: o `routes.tsx` gerado importa `./pages/Create` e `./pages/Update`, mas o `make:entity` só escreve `pages/List.tsx`. O `npm run build`/typecheck falha até você adicionar essas páginas (e o `components/Form` que elas importam). Os templates já existem em `core/templates/frontend/` (`create.tsx.j2`, `update.tsx.j2`, `form.tsx.j2`).
+- Os templates de frontend em `core/templates/frontend/` geram componentes Mantine (`Paper`, `TextInput`, `Button`, `Table` via `DataTable`, `notifications`) e o `make:entity` cria `pages/List.tsx`, `pages/Create.tsx`, `pages/Update.tsx` e `components/Form.tsx` — todos compilam sob `strict`.
+- Os testes gerados são gravados como `apps/<app>/tests/test_<entity>.py` (coletáveis pelo `pytest`).
 
 ## Docker
 - Os arquivos de container são exemplos: `docker-compose.example.yml`, `Dockerfile.example`, `Dockerfile.web.example`. O `docker-compose up` do README falha até serem copiados/renomeados. O compose sobrescreve `DATABASE_URL` para SQLite em `./data/database.db`, usa Redis para api/worker, API na 8000 e web na 5173.

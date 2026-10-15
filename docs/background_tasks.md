@@ -34,7 +34,7 @@ def send_welcome_email(email: str):
 To start a worker that will listen for and execute tasks:
 
 ```bash
-celery -A core.celery_app worker --loglevel=info
+celery -A core.celery_app.celery_app worker --loglevel=info
 ```
 
 If you are using Docker, the worker starts automatically as part of the `docker-compose` stack.

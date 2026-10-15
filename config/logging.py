@@ -17,4 +17,7 @@ formatter = logging.Formatter(
 
 # Adiciona o formatador ao handler
 handler.setFormatter(formatter)
-logger.addHandler(handler)
+
+# Evita registrar handlers duplicados em recarregamentos (uvicorn --reload).
+if not logger.handlers:
+    logger.addHandler(handler)

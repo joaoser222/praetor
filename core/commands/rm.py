@@ -69,9 +69,12 @@ def rm_entity(name: str, app: str, only: str, except_: str, force: bool):
         "service": (f"services/{name}.py", "services"),
         "router": (f"routers/{name}.py", None),
         "permission": (f"permissions/{name}.py", None),
-        "test": (f"tests/{name}.py", None),
+        "test": (f"tests/test_{name}.py", None),
         "fe_service": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "service.ts"), "frontend"),
         "fe_list": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "pages/List.tsx"), "frontend"),
+        "fe_create": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "pages/Create.tsx"), "frontend"),
+        "fe_update": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "pages/Update.tsx"), "frontend"),
+        "fe_form": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "components/Form.tsx"), "frontend"),
         "fe_routes": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "routes.tsx"), "frontend"),
         "fe_types": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "types.ts"), "frontend"),
         "fe_schema": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "schema.ts"), "frontend"),
@@ -115,7 +118,7 @@ def rm_entity(name: str, app: str, only: str, except_: str, force: bool):
     
     # Confirmação
     if not force:
-        click.secho(f"⚠ The following components will be removed:", fg="yellow", bold=True)
+        click.secho("⚠ The following components will be removed:", fg="yellow", bold=True)
         for component in existing_files.keys():
             click.echo(f"  - {component}")
         if not click.confirm("\nAre you sure you want to continue?", default=False):

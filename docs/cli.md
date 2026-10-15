@@ -6,13 +6,17 @@ The `manage.py` utility is the primary tool for managing the lifecycle of your a
 
 - `python manage.py run:server`: Starts the Uvicorn dev server.
 - `python manage.py shell`: Starts an interactive Python shell with the app context.
-- `python manage.py test`: Runs the test suite with `pytest`.
+- `python manage.py run:test [app]`: Runs the test suite with `pytest`.
 
 ## Database Management
 
 - `python manage.py db:makemigrations -m "message"`: Create a new migration.
 - `python manage.py db:migrate`: Upgrade database to the latest version.
 - `python manage.py db:rollback`: Downgrade database one step.
+
+> **Caminho canônico:** use `db:migrate` (migrações versionadas em `migrations/versions/`)
+> para subir o schema. `db:create` cria as tabelas diretamente a partir dos models e
+> serve para desenvolvimento rápido, dispensando o histórico de migrações.
 
 ## Code Generation (`make`)
 

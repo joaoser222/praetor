@@ -1,9 +1,9 @@
 import api from '@/lib/api';
-
-
+import { clearSession, saveTokens } from '@/lib/auth';
+import type { LoginFormValues } from './schema';
 
 export const authService = {
-    async login(credentials: any) {
+    async login(credentials: LoginFormValues) {
         const formData = new FormData();
         formData.append('username', credentials.email);
         formData.append('password', credentials.password);
@@ -15,15 +15,15 @@ export const authService = {
         });
 
         if (response.data.access_token) {
-            localStorage.setItem('access_token', response.data.access_token);
+            saveTokens(response.data);
         }
 
         return response.data;
     },
 
     async logout() {
-        localStorage.removeItem('access_token');
-        // Opcional: chamar o endpoint de logout se quiser revogar o token de refresh
+        clearSession();
+        // Opcional: chamar o endpoint de logout para revogar o token de refresh no servidor.
     },
 
     async getProfile() {

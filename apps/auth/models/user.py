@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String, Table, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from core.base_model import BaseModel
 
@@ -17,6 +17,8 @@ class User(BaseModel):
     role_id = Column(Integer, ForeignKey("auth_roles.id"), nullable=True)
 
     role = relationship("Role", back_populates="users")
-    user_permissions = relationship("UserPermission", back_populates="user")
+    user_permissions = relationship(
+        "UserPermission", back_populates="user", cascade="all, delete-orphan"
+    )
 
-    tokens = relationship("Token", back_populates="user")
+    tokens = relationship("Token", back_populates="user", cascade="all, delete-orphan")

@@ -1,0 +1,24 @@
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests", "apps"]
+python_files = ["test_*.py", "*_test.py"]
+python_functions = ["test_*"]
+addopts = "-ra --strict-markers"
+markers = [
+    "asyncio: marca testes assíncronos executados pelo pytest-asyncio.",
+]
+
+[tool.ruff]
+line-length = 100
+exclude = ["migrations/versions", "web", "venv"]
+
+[tool.ruff.lint]
+# Apenas regras que apontam defeitos reais (imports quebrados, nomes indefinidos).
+select = ["E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# Pacotes __init__.py reexportam símbolos (models, repositórios, serviços).
+"**/__init__.py" = ["F401"]
+
+

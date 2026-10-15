@@ -1,41 +1,33 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { {{ name }}Schema, {{ class_name }}FormValues } from '../schema';
+import { Button, Group, Paper, Stack } from '@mantine/core';
+import { {{ name }}Schema, type {{ class_name }}FormValues } from '../schema';
 import { commonMessages } from '@/lib/i18n';
-import { Button, Group, Paper, Stack, TextInput } from '@mantine/core';
 
 interface {{ class_name }}FormProps {
-  initialData?: any;
+  initialData?: Record<string, unknown>;
   onSubmit: (data: {{ class_name }}FormValues) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
-export const {{ class_name }}Form: React.FC<{{ class_name }}FormProps> = ({ 
-  initialData, 
-  onSubmit, 
-  onCancel, 
-  isLoading 
+export const {{ class_name }}Form: React.FC<{{ class_name }}FormProps> = ({
+  initialData,
+  onSubmit,
+  onCancel,
+  isLoading,
 }) => {
-  const { register, handleSubmit, formState: { errors } } = useForm<{{ class_name }}FormValues>({
+  const { handleSubmit } = useForm<{{ class_name }}FormValues>({
     resolver: zodResolver({{ name }}Schema),
-    defaultValues: initialData || {
-      name: '',
-    },
+    defaultValues: initialData,
   });
 
   return (
     <Paper withBorder radius="md" p="lg">
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack>
-          <TextInput
-            label="Nome"
-            placeholder="Nome..."
-            disabled={isLoading}
-            error={errors.name?.message}
-            {...register('name')}
-          />
+          {/* Adicione aqui os campos do formulário (TextInput, Select, ...). */}
 
           <Group justify="flex-end" mt="sm">
             <Button type="button" variant="default" onClick={onCancel} disabled={isLoading}>

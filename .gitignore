@@ -31,6 +31,10 @@ env/
 # Pytest
 .pytest_cache/
 
+# Bancos de dados locais de desenvolvimento/teste
+*.db
+data/
+
 # mypy
 .mypy_cache/
 

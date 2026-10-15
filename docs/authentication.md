@@ -6,13 +6,13 @@ Praetor implements a high-security, hybrid authentication model using JWT and Op
 
 ### 1. Access Tokens (JWT)
 - **Type**: JSON Web Token (JWT).
-- **Storage**: Sent via the `Authorization: Bearer <token>` header or as a `HttpOnly` cookie.
+- **Storage**: Sent via the `Authorization: Bearer <token>` header. No login, o backend também grava um cookie `HttpOnly` (`access_token`), aceito pelo backend e usado pelo Swagger UI.
 - **Validation**: Stateless. Validated using the `SECRET_KEY` without database lookups, ensuring high performance.
 - **Lifespan**: Typically short-lived (e.g., 30 minutes).
 
 ### 2. Refresh Tokens (Opaque)
 - **Type**: Random secure string (Opaque).
-- **Storage**: Stored in the database and linked to a user.
+- **Storage**: Stored in the database and linked to a user. Também é gravado no cookie `HttpOnly` `refresh_token`.
 - **Validation**: Stateful. Requires a database lookup to check if the token is valid and not revoked.
 - **Lifespan**: Typically long-lived (e.g., 7 days).
 - **Security**: Can be revoked instantly (e.g., on logout or password change), providing a "kill switch" for active sessions.
