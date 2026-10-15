@@ -18,9 +18,9 @@ router = APIRouter(
 @router.get("/", response_model=List[schemas.UserResponse])
 async def get_all_users(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
     """
-    Retrieve all users.
+    Recupera todos os usuários.
 
-    This endpoint is restricted to superusers and supports pagination.
+    Este endpoint é restrito a superusuários e suporta paginação.
     """
     repo = UserRepository(db)
     return await repo.get_multi(skip=skip, limit=limit)
@@ -29,9 +29,9 @@ async def get_all_users(skip: int = 0, limit: int = 100, db: AsyncSession = Depe
 @router.get("/{pk_type}", response_model=schemas.UserResponse)
 async def get_user(id: int, db: AsyncSession = Depends(get_db)):
     """
-    Get a specific user by their ID.
+    Obtém um usuário específico pelo seu ID.
 
-    This endpoint is restricted to superusers.
+    Este endpoint é restrito a superusuários.
     """
     repo = UserRepository(db)
     db_obj = await repo.get(pk=id)
@@ -43,9 +43,9 @@ async def get_user(id: int, db: AsyncSession = Depends(get_db)):
 @router.put("/{pk_type}", response_model=schemas.UserResponse)
 async def update_user(id: int, user_in: schemas.UserUpdate, db: AsyncSession = Depends(get_db)):
     """
-    Update a user's information by their ID.
+    Atualiza as informações de um usuário pelo seu ID.
 
-    This endpoint is restricted to superusers.
+    Este endpoint é restrito a superusuários.
     """
     repo = UserRepository(db)
     return await repo.update(pk=id, obj_in=user_in)
@@ -54,9 +54,9 @@ async def update_user(id: int, user_in: schemas.UserUpdate, db: AsyncSession = D
 @router.delete("/{pk_type}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(id: int, db: AsyncSession = Depends(get_db)):
     """
-    Delete a user by their ID.
+    Remove um usuário pelo seu ID.
 
-    This endpoint is restricted to superusers.
+    Este endpoint é restrito a superusuários.
     """
     repo = UserRepository(db)
     await repo.delete(pk=id)

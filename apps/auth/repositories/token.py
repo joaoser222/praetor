@@ -12,7 +12,7 @@ class TokenRepository(BaseRepository[Token, dict, dict]):
         super().__init__(Token, db)
 
     async def get_by_token(self, token: str) -> Optional[Token]:
-        """Get a refresh token by its value."""
+        """Obtém um token de refresh pelo seu valor."""
         query = select(self.model).where(
             and_(
                 self.model.token == token,
@@ -29,9 +29,9 @@ class TokenRepository(BaseRepository[Token, dict, dict]):
         expires_at: datetime
     ) -> Token:
         """
-        Create a new refresh token.
+        Cria um novo token de refresh.
         
-        In the hybrid model, only refresh tokens are stored in the database.
+        No modelo híbrido, apenas os tokens de refresh são armazenados no banco de dados.
         """
         db_token = Token(
             token=token,
@@ -45,7 +45,7 @@ class TokenRepository(BaseRepository[Token, dict, dict]):
         return db_token
 
     async def revoke_token(self, token: str) -> bool:
-        """Revoke a refresh token (marks it as inactive)."""
+        """Revoga um token de refresh (marca-o como inativo)."""
         db_token = await self.get_by_token(token)
         if db_token:
             db_token.is_active = False
@@ -55,7 +55,7 @@ class TokenRepository(BaseRepository[Token, dict, dict]):
         return False
 
     async def revoke_user_tokens(self, user_id: int) -> int:
-        """Revoke all refresh tokens for a user."""
+        """Revoga todos os tokens de refresh de um usuário."""
         query = select(self.model).where(
             and_(
                 self.model.user_id == user_id,
@@ -77,7 +77,7 @@ class TokenRepository(BaseRepository[Token, dict, dict]):
         return count
 
     async def cleanup_expired_tokens(self) -> int:
-        """Remove expired tokens from the database."""
+        """Remove do banco de dados os tokens expirados."""
         now = datetime.now(timezone.utc)
         query = select(self.model).where(self.model.expires_at < now)
         result = await self.db.execute(query)
@@ -93,7 +93,7 @@ class TokenRepository(BaseRepository[Token, dict, dict]):
         return count
 
     async def is_token_valid(self, token: str) -> bool:
-        """Check if a refresh token is valid (exists, is active and not expired)."""
+        """Verifica se um token de refresh é válido (existe, está ativo e não expirou)."""
         db_token = await self.get_by_token(token)
         if not db_token:
             return False
@@ -105,4 +105,3 @@ class TokenRepository(BaseRepository[Token, dict, dict]):
             return False
         
         return True
-

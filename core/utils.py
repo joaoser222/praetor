@@ -11,11 +11,11 @@ from core.apps import app_registry
 
 def auto_discover_apps():
     """
-    Automatically discovers and registers all apps from the 'apps' directory.
+    Descobre e registra automaticamente todos os apps do diretório 'apps'.
 
-    This function scans the 'apps' directory, looks for an 'app.py' file
-    in each subdirectory, imports the 'app_config' instance, and registers it
-    in the global 'app_registry'.
+    Esta função varre o diretório 'apps', procura por um arquivo 'app.py'
+    em cada subdiretório, importa a instância 'app_config' e a registra
+    no 'app_registry' global.
     """
     apps_dir = settings.BASE_DIR / "apps"
     if not apps_dir.is_dir():
@@ -41,12 +41,12 @@ def auto_discover_apps():
 
 def auto_discover_routers(app: FastAPI, base_prefix: str = "/api"):
     """
-    Iterates over the registered AppConfigs and includes their routers in the main FastAPI app.
+    Itera sobre os AppConfigs registrados e inclui seus routers no app FastAPI principal.
     """
     logger.info("Loading routers from registered apps...")
     for app_config in app_registry.apps:
-        # Accessing .router triggers the lazy loading of the app's router.
-        # The property ensures it's loaded only once.
+        # Acessar .router dispara o carregamento preguiçoso (lazy) do router do app.
+        # A propriedade garante que ele seja carregado apenas uma vez.
         if app_config.router.routes:
             app.include_router(
                 app_config.router,
@@ -57,12 +57,12 @@ def auto_discover_routers(app: FastAPI, base_prefix: str = "/api"):
 
 def auto_discover_commands(cli, base_dir: str):
     """
-    Automatically discover and register all CLI commands from commands directory.
+    Descobre e registra automaticamente todos os comandos de CLI do diretório informado.
     """
     commands_path = settings.BASE_DIR / base_dir.replace(".", "/")
 
     def process_command_module(module: ModuleType, module_stem: str):
-        # Search for objects from Click (Command or Group)
+        # Procura por objetos do Click (Command ou Group)
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
             if isinstance(attr, (click.Command, click.Group)):
@@ -80,22 +80,22 @@ def auto_discover_commands(cli, base_dir: str):
 
 
 def create_from_template(template_env, template_name, target_path, context):
-    """Renders a template and writes it to a file."""
+    """Renderiza um template e o escreve em um arquivo."""
     template = template_env.get_template(template_name)
     rendered_content = template.render(context)
     with open(target_path, "w") as f:
         f.write(rendered_content)
 
 def to_pascal_case(name: str) -> str:
-    """Convert snake_case or kebab-case to PascalCase"""
+    """Converte snake_case ou kebab-case para PascalCase"""
     return ''.join(word.capitalize() for word in name.replace('-', '_').split('_'))
 
 
 def to_plural(word: str) -> str:
     """
-    Convert a word to its plural form following English pluralization rules.
+    Converte uma palavra para o plural seguindo as regras de pluralização do inglês.
     """
-    # Special irregular plurals
+    # Plurais irregulares especiais
     irregular_plurals = {
         'person': 'people',
         'child': 'children',
@@ -109,29 +109,29 @@ def to_plural(word: str) -> str:
     
     word_lower = word.lower()
     
-    # Check for irregular plurals
+    # Verifica plurais irregulares
     if word_lower in irregular_plurals:
         return irregular_plurals[word_lower]
     
-    # Words ending in consonant + y -> ies
+    # Palavras terminadas em consoante + y -> ies
     if len(word) > 1 and word[-1] == 'y' and word[-2] not in 'aeiou':
         return word[:-1] + 'ies'
     
-    # Words ending in s, ss, sh, ch, x, z -> es
+    # Palavras terminadas em s, ss, sh, ch, x, z -> es
     if word.endswith(('s', 'ss', 'sh', 'ch', 'x', 'z')):
         return word + 'es'
     
-    # Words ending in consonant + o -> es
+    # Palavras terminadas em consoante + o -> es
     if len(word) > 1 and word[-1] == 'o' and word[-2] not in 'aeiou':
         return word + 'es'
     
-    # Words ending in f or fe -> ves
+    # Palavras terminadas em f ou fe -> ves
     if word.endswith('fe'):
         return word[:-2] + 'ves'
     if word.endswith('f'):
         return word[:-1] + 'ves'
     
-    # Default: just add s
+    # Padrão: apenas adiciona s
     return word + 's'
 
 class PermissionDef(NamedTuple):

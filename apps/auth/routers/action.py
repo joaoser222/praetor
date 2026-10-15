@@ -17,7 +17,7 @@ router = APIRouter(prefix="/action")
 async def register_user(
     user_in: schemas.UserCreate, db: AsyncSession = Depends(get_db)
 ):
-    """Register a new user."""
+    """Registra um novo usuário."""
     user_service = UserService(db)
     return await user_service.create_user(user_in)
 
@@ -27,11 +27,11 @@ async def login_for_access_token(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Authenticate user and return tokens using the hybrid model.
-    Supporting OAuth2PasswordRequestForm allows using Swagger UI's 'Authorize' feature.
+    Autentica o usuário e retorna os tokens usando o modelo híbrido.
+    Suportar OAuth2PasswordRequestForm permite usar o recurso 'Authorize' do Swagger UI.
     """
     user_service = UserService(db)
-    # OAuth2PasswordRequestForm uses 'username' field, which we map to 'email'
+    # OAuth2PasswordRequestForm usa o campo 'username', que mapeamos para 'email'
     return await user_service.authenticate_user(
         form_data.username, 
         form_data.password
@@ -43,18 +43,18 @@ async def refresh_access_token(
     refresh_data: schemas.RefreshTokenRequest, db: AsyncSession = Depends(get_db)
 ):
     """
-    Refresh access token using a refresh token.
+    Renova o token de acesso usando um token de refresh.
     
-    This endpoint:
-    1. Validates the opaque refresh token stored in the database
-    2. Generates a new JWT access token
-    3. Generates a new refresh token (token rotation for security)
-    4. Revokes the old refresh token
+    Este endpoint:
+    1. Valida o token de refresh opaco armazenado no banco de dados
+    2. Gera um novo token de acesso JWT
+    3. Gera um novo token de refresh (rotação de token por segurança)
+    4. Revoga o token de refresh antigo
     
-    This allows you to:
-    - Revoke user sessions by invalidating refresh tokens in the database
-    - Maintain JWT performance (no DB lookup for access tokens)
-    - Have fine-grained control over active sessions
+    Isso permite:
+    - Revogar sessões de usuários invalidando tokens de refresh no banco de dados
+    - Manter a performance do JWT (sem consulta ao banco para tokens de acesso)
+    - Ter controle refinado sobre as sessões ativas
     """
     user_service = UserService(db)
     return await user_service.refresh_access_token(refresh_data.refresh_token)
@@ -64,13 +64,13 @@ async def logout(
     refresh_data: schemas.RefreshTokenRequest, db: AsyncSession = Depends(get_db)
 ):
     """
-    Logout user by revoking the refresh token.
+    Faz logout do usuário revogando o token de refresh.
     
-    This invalidates the refresh token, preventing it from being used
-    to generate new access tokens. The current access token (JWT) will
-    remain valid until it expires (short-lived, typically 30 minutes).
+    Isso invalida o token de refresh, impedindo que ele seja usado
+    para gerar novos tokens de acesso. O token de acesso atual (JWT)
+    continuará válido até expirar (curta duração, tipicamente 30 minutos).
     
-    To revoke all sessions, use /logout/all endpoint.
+    Para revogar todas as sessões, use o endpoint /logout/all.
     """
     user_service = UserService(db)
     return await user_service.logout(refresh_data.refresh_token)
@@ -81,14 +81,14 @@ async def logout_all_sessions(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Logout user from all sessions by revoking all refresh tokens.
+    Faz logout do usuário de todas as sessões revogando todos os tokens de refresh.
     
-    This is useful for security purposes:
-    - Password change
-    - Suspicious activity detected
-    - User request to logout from all devices
+    Isso é útil por motivos de segurança:
+    - Troca de senha
+    - Detecção de atividade suspeita
+    - Pedido do usuário para sair de todos os dispositivos
     
-    Note: Current access token (JWT) will remain valid until expiration.
+    Observação: o token de acesso atual (JWT) continuará válido até expirar.
     """
     user_service = UserService(db)
     return await user_service.logout_all_sessions(current_user.id)
@@ -96,5 +96,5 @@ async def logout_all_sessions(
 
 @router.get("/profile", response_model=schemas.UserResponse)
 async def read_users_me(current_user: schemas.UserResponse = Depends(dependencies.get_current_user)):
-    """Get current logged-in user."""
+    """Obtém o usuário logado atualmente."""
     return current_user

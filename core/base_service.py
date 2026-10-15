@@ -6,13 +6,13 @@ class BaseService:
         self.db = db
 
     async def commit(self):
-        """Commits the current transaction."""
+        """Confirma a transação atual."""
         await self.db.commit()
 
     async def rollback(self):
-        """Rolls back the current transaction."""
+        """Desfaz a transação atual."""
         await self.db.rollback()
 
     async def refresh(self, instance: object):
-        """Refreshes the state of the given instance from the database."""
+        """Atualiza o estado da instância informada a partir do banco de dados."""
         await self.db.refresh(instance)

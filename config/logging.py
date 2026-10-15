@@ -3,18 +3,18 @@ import sys
 
 from config.settings import settings
 
-# Create logger
+# Cria o logger
 logger = logging.getLogger(settings.APP_NAME)
 logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
 
-# Create console handler and set level
+# Cria o handler de console e define o nível
 handler = logging.StreamHandler(sys.stdout)
 
-# Create formatter
+# Cria o formatador
 formatter = logging.Formatter(
     "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
-# Add formatter to handler
+# Adiciona o formatador ao handler
 handler.setFormatter(formatter)
 logger.addHandler(handler)

@@ -6,10 +6,10 @@ from core.base_model import BaseModel
 
 class Token(BaseModel):
     """
-    Model for storing refresh tokens in the database.
+    Modelo para armazenar tokens de refresh no banco de dados.
 
-    In the hybrid model, only refresh tokens are stored in the database.
-    Access tokens are JWT (stateless) and don't need to be stored.
+    No modelo híbrido, apenas os tokens de refresh são armazenados no banco de dados.
+    Os tokens de acesso são JWT (stateless) e não precisam ser armazenados.
     """
     __tablename__ = "auth_tokens"
 
@@ -19,5 +19,5 @@ class Token(BaseModel):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
 
-    # Relationship with user
+    # Relacionamento com o usuário
     user = relationship("User", back_populates="tokens")

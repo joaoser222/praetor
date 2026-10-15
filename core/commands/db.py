@@ -13,7 +13,7 @@ alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 @click.group('db')
 def db_cli():
-    """Database management commands."""
+    """Comandos de gerenciamento de banco de dados."""
     pass
 
 
@@ -24,7 +24,7 @@ async def _create_all():
 
 @db_cli.command("db:create")
 def db_create():
-    """Creates all database tables."""
+    """Cria todas as tabelas do banco de dados."""
     click.echo("Creating database tables...")
     asyncio.run(_create_all())
     click.echo("Done.")
@@ -37,7 +37,7 @@ async def _drop_all():
 
 @db_cli.command("db:drop")
 def db_drop():
-    """Drops all database tables."""
+    """Remove todas as tabelas do banco de dados."""
     if click.confirm("Are you sure you want to drop all tables?"):
         click.echo("Dropping database tables...")
         asyncio.run(_drop_all())
@@ -47,14 +47,14 @@ def db_drop():
 @db_cli.command("db:makemigrations")
 @click.option("-m", "--message", required=True, help="Revision message")
 def db_makemigrations(message: str):
-    """Creates a new revision file (makemigrations)."""
+    """Cria um novo arquivo de revisão (makemigrations)."""
     click.echo(f"Creating new migration: {message}")
     command.revision(alembic_cfg, message=message, autogenerate=True)
 
 
 @db_cli.command("db:migrate")
 def db_migrate():
-    """Applies all pending migrations."""
+    """Aplica todas as migrações pendentes."""
     click.echo("Applying migrations...")
     command.upgrade(alembic_cfg, "head")
     click.echo("Migrations applied.")
@@ -63,7 +63,7 @@ def db_migrate():
 @db_cli.command("db:rollback")
 @click.option("--steps", default=1, help="Number of migrations to rollback.")
 def db_rollback(steps: int):
-    """Rolls back migrations."""
+    """Reverte migrações."""
     click.echo(f"Rolling back {steps} migration(s)...")
     command.downgrade(alembic_cfg, f"-{steps}")
     click.echo("Rollback complete.")
@@ -71,7 +71,7 @@ def db_rollback(steps: int):
 
 @db_cli.command("db:reset")
 def db_reset():
-    """Resets the database (drops all tables and applies migrations)."""
+    """Reseta o banco de dados (remove todas as tabelas e aplica as migrações)."""
     if click.confirm(
         "This will delete all data. Are you sure you want to reset the database?"
     ):
@@ -83,11 +83,11 @@ def db_reset():
 
 @db_cli.command("db:current")
 def db_current():
-    """Shows the current migration revision."""
+    """Mostra a revisão de migração atual."""
     command.current(alembic_cfg)
 
 
 @db_cli.command("db:history")
 def db_history():
-    """Shows the migration history."""
+    """Mostra o histórico de migrações."""
     command.history(alembic_cfg)

@@ -14,10 +14,10 @@ from core.middlewares.logging import LoggingMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    # Inicialização
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     yield
-    # Shutdown
+    # Encerramento
     await close_db()
     logger.info("Database connections closed.")
 
@@ -40,7 +40,7 @@ app.add_middleware(
 
 app.add_middleware(LoggingMiddleware)
 
-# Exception Handlers
+# Manipuladores de exceções
 @app.exception_handler(BaseAPIException)
 async def api_exception_handler(request: Request, exc: BaseAPIException):
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
@@ -49,9 +49,9 @@ async def api_exception_handler(request: Request, exc: BaseAPIException):
 async def validation_exception_handler(request: Request, exc: ValidationError):
     return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
-# --- App Discovery ---
-# 1. Discover and register all apps from the 'apps' directory.
+# --- Descoberta de apps ---
+# 1. Descobre e registra todos os apps do diretório 'apps'.
 auto_discover_apps()
 
-# 2. Include routers from all registered apps.
+# 2. Inclui os routers de todos os apps registrados.
 auto_discover_routers(app)

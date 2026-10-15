@@ -19,7 +19,7 @@ class TimestampMixin:
 
 class BaseModel(DeclarativeBase, TimestampMixin, AsyncAttrs):
     """
-    Base model for all database models.
-    Includes timestamp mixin and async attributes support.
+    Modelo base para todos os modelos de banco de dados.
+    Inclui o mixin de timestamps e suporte a atributos assíncronos.
     """
     __abstract__ = True

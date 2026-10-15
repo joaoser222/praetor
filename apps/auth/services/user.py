@@ -21,7 +21,7 @@ class UserService(BaseService):
         self.token_repo = TokenRepository(db)
 
     async def create_user(self, user_in: UserCreate) -> User:
-        """Creates a new user."""
+        """Cria um novo usuário."""
         if await self.repo.get_by_email(user_in.email):
             raise ValidationException(detail="Email already registered")
         if await self.repo.get_by_username(user_in.username):
@@ -31,7 +31,7 @@ class UserService(BaseService):
         user_data = user_in.model_dump(exclude={"password"})
         user_data["hashed_password"] = hashed_password
         
-        # Manually create the model instance to use hashed_password
+        # Cria manualmente a instância do modelo para usar hashed_password
         db_user = User(**user_data)
         self.db.add(db_user)
         await self.db.commit()
@@ -40,22 +40,22 @@ class UserService(BaseService):
 
     async def authenticate_user(self, email: str, password: str) -> dict:
         """
-        Authenticates a user and returns tokens using the hybrid model.
+        Autentica um usuário e retorna os tokens usando o modelo híbrido.
         
-        Hybrid Model:
+        Modelo Híbrido:
         - Access Token: JWT (stateless, performático, sem consulta ao banco)
-        - Refresh Token: Opaque no banco (pode ser revogado facilmente)
+        - Refresh Token: Opaco no banco (pode ser revogado facilmente)
         
-        This combines the best of both worlds:
-        - Performance: JWT access tokens don't require database lookups
-        - Security: Refresh tokens can be revoked by removing from database
+        Isso combina o melhor dos dois mundos:
+        - Performance: tokens de acesso JWT não exigem consultas ao banco
+        - Segurança: tokens de refresh podem ser revogados ao serem removidos do banco
         
         Args:
-            email: User email
-            password: User password
+            email: E-mail do usuário
+            password: Senha do usuário
         
         Returns:
-            dict with access_token (JWT), refresh_token (opaque), token_type and auth_type
+            dict com access_token (JWT), refresh_token (opaco), token_type e auth_type
         """
         user = await self.repo.get_by_email(email)
         if not user or not verify_password(password, user.hashed_password):
@@ -63,11 +63,11 @@ class UserService(BaseService):
         if not user.is_active:
             raise UnauthorizedException(detail="Inactive user")
 
-        # Generate JWT access token (stateless, performático)
+        # Gera o token de acesso JWT (stateless, performático)
         token_data = {"sub": str(user.id)}
         access_token = create_access_token(data=token_data)
         
-        # Generate refresh token (armazenado no banco, pode ser revogado)
+        # Gera o token de refresh (armazenado no banco, pode ser revogado)
         refresh_token_value = generate_opaque_token()
         await self.token_repo.create_token(
             token=refresh_token_value,
@@ -84,21 +84,21 @@ class UserService(BaseService):
 
     async def refresh_access_token(self, refresh_token: str) -> dict:
         """
-        Refreshes an access token using a refresh token.
+        Renova um token de acesso usando um token de refresh.
         
-        This method validates the opaque refresh token stored in the database
-        and generates a new JWT access token.
+        Este método valida o token de refresh opaco armazenado no banco de dados
+        e gera um novo token de acesso JWT.
         
         Args:
-            refresh_token: The opaque refresh token
+            refresh_token: O token de refresh opaco
         
         Returns:
-            dict with new access_token, refresh_token, token_type and auth_type
+            dict com o novo access_token, refresh_token, token_type e auth_type
         
         Raises:
-            UnauthorizedException: If refresh token is invalid, expired, or revoked
+            UnauthorizedException: Se o token de refresh for inválido, expirado ou revogado
         """
-        # Validate refresh token in database
+        # Valida o token de refresh no banco de dados
         token_repo = TokenRepository(self.db)
         db_token = await token_repo.get_by_token(refresh_token)
         
@@ -108,24 +108,24 @@ class UserService(BaseService):
         if not db_token.is_active:
             raise UnauthorizedException(detail="Refresh token has been revoked")
         
-        # Check expiration
+        # Verifica a expiração
         from datetime import datetime, timezone
         if db_token.expires_at < datetime.now(timezone.utc):
             raise UnauthorizedException(detail="Refresh token has expired")
         
-        # Get user
+        # Obtém o usuário
         user = await self.repo.get(db_token.user_id)
         if not user or not user.is_active:
             raise UnauthorizedException(detail="User not found or inactive")
         
-        # Revoke old refresh token (token rotation for security)
+        # Revoga o token de refresh antigo (rotação de token por segurança)
         await token_repo.revoke_token(refresh_token)
         
-        # Generate new JWT access token
+        # Gera um novo token de acesso JWT
         token_data = {"sub": str(user.id)}
         new_access_token = create_access_token(data=token_data)
         
-        # Generate new refresh token
+        # Gera um novo token de refresh
         new_refresh_token_value = generate_opaque_token()
         await token_repo.create_token(
             token=new_refresh_token_value,
@@ -142,20 +142,20 @@ class UserService(BaseService):
 
     async def logout(self, refresh_token: str) -> dict:
         """
-        Logout user by revoking the refresh token.
+        Faz logout do usuário revogando o token de refresh.
         
-        This invalidates the refresh token, preventing it from being used
-        to generate new access tokens. The current access token will remain
-        valid until it expires (short-lived JWT).
+        Isso invalida o token de refresh, impedindo que ele seja usado
+        para gerar novos tokens de acesso. O token de acesso atual continuará
+        válido até expirar (JWT de curta duração).
         
         Args:
-            refresh_token: The refresh token to revoke
+            refresh_token: O token de refresh a ser revogado
         
         Returns:
-            dict with success message
+            dict com mensagem de sucesso
         
         Raises:
-            UnauthorizedException: If refresh token is invalid
+            UnauthorizedException: Se o token de refresh for inválido
         """
         token_repo = TokenRepository(self.db)
         revoked = await token_repo.revoke_token(refresh_token)
@@ -167,16 +167,16 @@ class UserService(BaseService):
 
     async def logout_all_sessions(self, user_id: int) -> dict:
         """
-        Logout user from all sessions by revoking all refresh tokens.
+        Faz logout do usuário de todas as sessões revogando todos os tokens de refresh.
         
-        This is useful for security purposes (e.g., password change,
-        suspicious activity, or admin action).
+        Isso é útil por motivos de segurança (por exemplo, troca de senha,
+        atividade suspeita ou ação de administrador).
         
         Args:
-            user_id: The user ID to revoke all tokens for
+            user_id: O ID do usuário para revogar todos os tokens
         
         Returns:
-            dict with count of revoked tokens
+            dict com a contagem de tokens revogados
         """
         token_repo = TokenRepository(self.db)
         count = await token_repo.revoke_user_tokens(user_id=user_id)

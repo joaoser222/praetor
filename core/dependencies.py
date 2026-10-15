@@ -9,8 +9,8 @@ from core.exceptions import ForbiddenException
 
 def require_role(required_roles: List[str]):
     """
-    Factory to create a dependency that checks if the current user
-    has at least one of the required roles.
+    Fábrica para criar uma dependência que verifica se o usuário atual
+    possui pelo menos um dos papéis exigidos.
     """
     async def role_checker(current_user: User = Depends(get_current_user)) -> User:
         user_role_name = (await current_user.awaitable_attrs.role).name if await current_user.awaitable_attrs.role else None
@@ -25,8 +25,8 @@ def require_role(required_roles: List[str]):
 
 def require_permission(required_permission: str):
     """
-    Factory to create a dependency that checks if the current user
-    has a specific permission through their roles.
+    Fábrica para criar uma dependência que verifica se o usuário atual
+    possui uma permissão específica por meio de seus papéis.
     """
     async def permission_checker(current_user: User = Depends(get_current_user)) -> User:
         if current_user.is_superuser:
@@ -34,15 +34,15 @@ def require_permission(required_permission: str):
 
         user_permissions = set()
         
-        # 1. Get permissions from the single role
+        # 1. Obtém as permissões do papel único
         role = await current_user.awaitable_attrs.role
         if role:
             for role_perm in await role.awaitable_attrs.permissions:
-                # Assuming role_perm is a RolePermission object, we need to access its permission
+                # Assumindo que role_perm é um objeto RolePermission; precisamos acessar sua permission
                 perm = await role_perm.awaitable_attrs.permission
                 user_permissions.add(perm.name)
 
-        # 2. Get direct permissions allocated to the user
+        # 2. Obtém as permissões atribuídas diretamente ao usuário
         for user_perm in await current_user.awaitable_attrs.user_permissions:
             perm = await user_perm.awaitable_attrs.permission
             user_permissions.add(perm.name)

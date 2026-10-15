@@ -12,7 +12,7 @@ class {{ class_name }}Base(BaseModel):
     {{ name }}: {{ type }}
 {%- endfor %}
 {%- else %}
-    pass # Add fields here
+    pass # Adicione os campos aqui
 {%- endif %}
 
 class {{ class_name }}Create({{ class_name }}Base):
@@ -25,7 +25,7 @@ class {{ class_name }}Update(BaseModel):
     {{ name }}: Optional[{{ base_type }}] = None
 {%- endfor %}
 {%- else %}
-    pass # Add fields here
+    pass # Adicione os campos aqui
 {%- endif %}
     model_config = ConfigDict(from_attributes=True)
 

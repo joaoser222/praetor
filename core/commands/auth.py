@@ -52,7 +52,7 @@ async def _delete_user(email: str):
         click.echo(f"User {email} deleted successfully.")
 
 def _discover_permissions() -> list[PermissionDef]:
-    """Discovers all permissions defined in the apps."""
+    """Descobre todas as permissões definidas nos apps."""
     all_permissions = []
     base_dir = "apps"
     apps_path = Path(base_dir)
@@ -66,7 +66,7 @@ def _discover_permissions() -> list[PermissionDef]:
                     package_name = f"{base_dir}.{app_dir.name}.permissions"
                     for py_file in permissions_path.glob("*.py"):
                         if py_file.name.startswith("_"):
-                            continue  # Ignores private files
+                            continue  # Ignora arquivos privados
                         
                         module_name = py_file.stem
                         full_module_name = f"{package_name}.{module_name}"
@@ -89,7 +89,7 @@ def _discover_permissions() -> list[PermissionDef]:
     return all_permissions
 
 async def _sync_permissions():
-    """Synchronizes permissions defined in the code with the database."""
+    """Sincroniza as permissões definidas no código com o banco de dados."""
     click.echo("Starting permission synchronization...")
     defined_permissions = _discover_permissions()
     if not defined_permissions:
@@ -97,13 +97,13 @@ async def _sync_permissions():
         return
 
     async with AsyncSessionFactory() as session:
-        # Get all existing permissions from the database
+        # Obtém todas as permissões existentes no banco de dados
         result = await session.execute(select(Permission.name))
         existing_permissions = {row[0] for row in result}
 
         defined_permissions_names = {p.name for p in defined_permissions}
 
-        # Permissions to be added
+        # Permissões a serem adicionadas
         to_add = defined_permissions_names - existing_permissions
 
         if to_add:
@@ -120,13 +120,13 @@ async def _sync_permissions():
 
 @click.group('auth')
 def auth_cli():
-    """Authentication management commands."""
+    """Comandos de gerenciamento de autenticação."""
     pass
 
 
 @auth_cli.command("auth:createsuperuser")
 def auth_createsuperuser():
-    """Creates a superuser."""
+    """Cria um superusuário."""
     email = click.prompt("Email", type=str)
     username = click.prompt("Username", type=str)
     full_name = click.prompt("Full Name", type=str)
@@ -152,5 +152,5 @@ def auth_createsuperuser():
 
 @auth_cli.command("auth:makepermissions")
 def auth_makepermissions():
-    """Generate permissions defined in the code with the database."""
+    """Gera as permissões definidas no código no banco de dados."""
     asyncio.run(_sync_permissions())

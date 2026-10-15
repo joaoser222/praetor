@@ -10,7 +10,7 @@ from config.database import get_db
 from core.base_model import BaseModel
 from main import app
 
-# Use an in-memory SQLite database for testing
+# Usa um banco de dados SQLite em memória para os testes
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 
 engine = create_async_engine(TEST_DATABASE_URL, echo=True)
@@ -21,7 +21,7 @@ TestingSessionLocal = sessionmaker(
 
 @pytest.fixture(scope="session")
 def event_loop():
-    """Create an instance of the default event loop for each test session."""
+    """Cria uma instância do event loop padrão para cada sessão de testes."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
@@ -29,7 +29,7 @@ def event_loop():
 
 @pytest.fixture(scope="function")
 async def db() -> AsyncGenerator[AsyncSession, None]:
-    """Fixture to create a new database session for each test."""
+    """Fixture que cria uma nova sessão de banco de dados para cada teste."""
     async with engine.begin() as conn:
         await conn.run_sync(BaseModel.metadata.create_all)
 
@@ -43,7 +43,7 @@ async def db() -> AsyncGenerator[AsyncSession, None]:
 
 @pytest.fixture(scope="function")
 def client(db: AsyncSession) -> TestClient:
-    """Fixture to create a TestClient with an overridden database dependency."""
+    """Fixture que cria um TestClient com a dependência de banco de dados sobrescrita."""
     app.dependency_overrides[get_db] = lambda: db
     with TestClient(app) as c:
         yield c

@@ -3,7 +3,7 @@ from core.utils import auto_discover_commands
 
 @click.group()
 def cli():
-    """A command-line interface for managing the application."""
+    """Interface de linha de comando para gerenciar a aplicação."""
     pass
 
 auto_discover_commands(cli, "commands")

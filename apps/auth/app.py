@@ -3,13 +3,13 @@ from core.base_app_config import BaseAppConfig
 
 
 class AuthAppConfig(BaseAppConfig):
-    """Configuration class for the 'auth' app."""
+    """Classe de configuração do app 'auth'."""
 
-    # In the future, you could override attributes or add new methods here.
-    # For example, to set a custom label for the documentation:
+    # No futuro, você pode sobrescrever atributos ou adicionar novos métodos aqui.
+    # Por exemplo, para definir um label personalizado para a documentação:
     # label = "Authentication"
     pass
 
 
-# This instance will be discovered and registered automatically.
+# Esta instância será descoberta e registrada automaticamente.
 app_config = AuthAppConfig(app_path=Path(__file__).parent)

@@ -1,1 +1,1 @@
-# Tests for the 'user' will go here.
+# Os testes para 'user' vão aqui.

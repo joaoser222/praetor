@@ -5,30 +5,30 @@ from core.utils import create_from_template,to_pascal_case,to_plural
 from config.settings import settings
 
 def _load_template_env():
-    # Setup Jinja2 environment
+    # Configura o ambiente Jinja2
     template_path = os.path.join(settings.BASE_DIR, "core", "templates")
     return Environment(loader=FileSystemLoader(template_path))
 
 @click.group('make')
 def make_cli():
-    """A group of commands to generate boilerplate code."""
+    """Um grupo de comandos para gerar código boilerplate."""
     pass
 
 @make_cli.command("make:app")
 @click.argument("name")
 @click.option("--no-frontend" , is_flag=True, help="Disable frontend feature generation")
 def make_app(name: str, no_frontend: bool):
-    """Creates a new app with a default structure."""
+    """Cria um novo app com uma estrutura padrão."""
     app_dir = os.path.join(settings.BASE_DIR, "apps", name)
     env = _load_template_env()
     class_name = to_pascal_case(name)
 
-    # Frontend feature directory
+    # Diretório da feature no frontend
     web_dir = os.path.join(settings.BASE_DIR, "web")
     if os.path.exists(web_dir) and not no_frontend:
         feature_dir = os.path.join(web_dir, "src", "features", name)
         os.makedirs(feature_dir, exist_ok=True)
-        # Create a simple index file or placeholder if needed
+        # Cria um arquivo index simples ou placeholder, se necessário
         click.secho(f"Frontend feature '{name}' created in {feature_dir}", fg="cyan")
 
 
@@ -37,22 +37,22 @@ def make_app(name: str, no_frontend: bool):
         click.secho(f"App '{name}' already exists.", fg="yellow")
         return
     
-    # Create app directory
+    # Cria o diretório do app
     os.makedirs(app_dir)
 
-    # Create __init__.py file in app directory
+    # Cria o arquivo __init__.py no diretório do app
     open(os.path.join(app_dir, "__init__.py"), "w").close()
     
-    # Create app.py file in app directory
+    # Cria o arquivo app.py no diretório do app
     create_from_template(env, 'app.py.j2', os.path.join(app_dir, "app.py"), {"name": name, "class_name": class_name})
 
-    # Create tasks.py file in app directory
+    # Cria o arquivo tasks.py no diretório do app
     create_from_template(env, 'tasks.py.j2', os.path.join(app_dir, "tasks.py"), {"name": name})
 
-    # Create dependencies.py file in app directory
+    # Cria o arquivo dependencies.py no diretório do app
     create_from_template(env, 'dependencies.py.j2', os.path.join(app_dir, "dependencies.py"), {"name": name})
 
-    # Create app base directories
+    # Cria os diretórios base do app
     for subdir in ["repositories", "services", "models", "schemas","tests", "routers", "permissions"]:
         path = os.path.join(app_dir, subdir)
         os.makedirs(path)
@@ -76,7 +76,7 @@ def make_app(name: str, no_frontend: bool):
 
 def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, custom_table_name: str, no_prefix: bool, no_frontend: bool):
 
-    """Creates a new entity (model, schema, repo, service) inside an app."""
+    """Cria uma nova entidade (model, schema, repo, service) dentro de um app."""
     app_dir = os.path.join(settings.BASE_DIR, "apps", app)
     env = _load_template_env()
 
@@ -84,7 +84,7 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
         click.secho(f"App '{app}' not found. Please create it first with 'make:app {app}'.", fg="red")
         return
 
-    # Validate conflicting options
+    # Valida opções conflitantes
     if only and except_:
         click.secho("Cannot use --only and --except together. Choose one.", fg="red")
         return
@@ -93,18 +93,18 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
         click.secho("Cannot use --minimal with --only or --except.", fg="red")
         return
 
-    # Handle minimal flag
+    # Trata a flag minimal
     if minimal:
         only = "model,schema"
 
     pascal_name = to_pascal_case(name)
     
-    # Process name to plural - more readable approach
+    # Processa o nome para o plural - abordagem mais legível
     name_parts = name.split('_')
     name_parts[-1] = to_plural(name_parts[-1])
     plural_name = '_'.join(name_parts)
     
-    # Table name logic with clear conditional flow
+    # Lógica do nome da tabela com fluxo condicional claro
     table_name = custom_table_name or plural_name
     if not no_prefix:
         table_name = f"{app}_{table_name}"
@@ -117,16 +117,16 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
         "service_name": f"{pascal_name}Service",
         "table_name": table_name,
         "plural_name": plural_name,
-        "attributes": {}  # Required for schema template compatibility
+        "attributes": {}  # Necessário para compatibilidade com o template de schema
     }
 
 
-    # All possible files to generate
-    # Format: (template_file, target_file, init_dir, import_class)
-    # init_dir and import_class are None when __init__.py shouldn't be updated
+    # Todos os arquivos possíveis de gerar
+    # Formato: (template_file, target_file, init_dir, import_class)
+    # init_dir e import_class são None quando __init__.py não deve ser atualizado
     all_template_files = {
         "model": ("entity/model.py.j2", f"models/{name}.py", "models", context["class_name"]),
-        "schema": ("entity/schema.py.j2", f"schemas/{name}.py", None, None),  # schemas import the whole module
+        "schema": ("entity/schema.py.j2", f"schemas/{name}.py", None, None),  # schemas importam o módulo inteiro
         "repository": ("entity/repository.py.j2", f"repositories/{name}.py", "repositories", context["repo_name"]),
         "service": ("entity/service.py.j2", f"services/{name}.py", "services", context["service_name"]),
         "router": ("entity/router.py.j2", f"routers/{name}.py", None, None),
@@ -134,7 +134,7 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
         "test": ("entity/test.py.j2", f"tests/{name}.py", None, None),
     }
 
-    # Frontend files (only if web directory exists)
+    # Arquivos de frontend (apenas se o diretório web existir)
     web_dir = os.path.join(settings.BASE_DIR, "web")
     if os.path.exists(web_dir) and not no_frontend:
         feature_path = os.path.join(web_dir, "src", "features", app, name)
@@ -150,10 +150,10 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
 
 
 
-    # Determine which files to generate
+    # Determina quais arquivos gerar
     if only:
         components_to_generate = [c.strip() for c in only.split(",")]
-        # Validate components
+        # Valida os componentes
         invalid = [c for c in components_to_generate if c not in all_template_files]
         if invalid:
             click.secho(f"Invalid components: {', '.join(invalid)}", fg="red")
@@ -164,7 +164,7 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
     
     elif except_:
         components_to_exclude = [c.strip() for c in except_.split(",")]
-        # Validate components
+        # Valida os componentes
         invalid = [c for c in components_to_exclude if c not in all_template_files]
         if invalid:
             click.secho(f"Invalid components to exclude: {', '.join(invalid)}", fg="red")
@@ -174,17 +174,17 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
         files_to_generate = {k: v for k, v in all_template_files.items() if k not in components_to_exclude}
     
     else:
-        # Generate all components (default behavior)
+        # Gera todos os componentes (comportamento padrão)
         files_to_generate = all_template_files.copy()
 
-    # Component dependencies (optional warning)
+    # Dependências entre componentes (apenas aviso)
     dependencies = {
         "repository": ["model"],
         "service": ["repository"],
         "router": ["service", "schema"],
     }
 
-    # Check dependencies (warning only)
+    # Verifica as dependências (apenas aviso)
     components_list = list(files_to_generate.keys())
     for component in components_list:
         if component in dependencies:
@@ -195,19 +195,19 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
                     fg="yellow"
                 )
 
-    # Generate files
+    # Gera os arquivos
     generated_components = []
     for component, (template_file, target_file, init_dir, import_class) in files_to_generate.items():
         if component.startswith("fe_"):
             target_path = target_file
-            # Ensure subdirectory exists for frontend
+            # Garante que o subdiretório exista para o frontend
             os.makedirs(os.path.dirname(target_path), exist_ok=True)
             display_path = os.path.relpath(target_path, settings.BASE_DIR)
         else:
             target_path = os.path.join(app_dir, target_file)
             display_path = os.path.join(f"apps/{app}", target_file)
         
-        # Check if file already exists
+        # Verifica se o arquivo já existe
         if os.path.exists(target_path):
             click.secho(f"⚠ File already exists: {display_path}", fg="yellow")
             if not click.confirm(f"  Overwrite?", default=False):
@@ -218,20 +218,20 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
 
         generated_components.append(component)
         
-        # Update __init__.py if applicable
+        # Atualiza o __init__.py, se aplicável
         if init_dir and import_class:
             target_dir = os.path.join(app_dir, init_dir)
             init_file = os.path.join(target_dir, "__init__.py")
             import_line = f"from .{name} import {import_class}\n"
             
-            # Check if import already exists
+            # Verifica se a importação já existe
             if os.path.exists(init_file):
                 with open(init_file, "r") as f:
                     content = f.read()
                 if import_line not in content:
                     with open(init_file, "a") as f:
                         f.write(import_line)
-    # Summary output
+    # Resumo da saída
     if generated_components:
         click.secho(f"\n✓ Entity '{name}' created in app '{app}'", fg="green", bold=True)
         click.secho(f"  Generated: {', '.join(generated_components)}", fg="cyan")
@@ -243,12 +243,12 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
 @make_cli.command("make:command")
 @click.argument("name")
 def make_command(name: str):
-    """Creates a new custom command file in the root commands/ directory."""
+    """Cria um novo arquivo de comando personalizado no diretório commands/ da raiz."""
     command_root = os.path.join(settings.BASE_DIR, "commands")
     command_path = os.path.join(command_root, f"{name}.py")
     env = _load_template_env()
 
-    # Create commands directory if nos exists
+    # Cria o diretório commands, caso não exista
     if not os.path.exists(command_root):
         os.makedirs(command_root)
         open(os.path.join(command_root, f"__init__.py"), "w").close()
@@ -264,14 +264,14 @@ def make_command(name: str):
 @make_cli.command("make:middleware")
 @click.argument("name")
 def make_middleware(name: str):
-    """Creates a new middleware file in the root middlewares/ directory."""
+    """Cria um novo arquivo de middleware no diretório middlewares/ da raiz."""
     
     middleware_root = os.path.join(settings.BASE_DIR, "middlewares")
     middleware_path = os.path.join(middleware_root, f"{name}.py")
     env = _load_template_env()
     pascal_name = to_pascal_case(name)
 
-    # Create commands directory if nos exists
+    # Cria o diretório middlewares, caso não exista
     if not os.path.exists(middleware_root):
         os.makedirs(middleware_root)
         open(os.path.join(middleware_root, f"__init__.py"), "w").close()

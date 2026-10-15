@@ -4,7 +4,7 @@ from pydantic import AnyHttpUrl, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    # Project root directory
+    # Diretório raiz do projeto
     BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
     APP_NAME: str = "Praetor"
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # Celery settings
+    # Configurações do Celery
     CELERY_BROKER_URL: str = Field("redis://localhost:6379/0", description="URL for Celery message broker (e.g., redis, amqp)")
     CELERY_RESULT_BACKEND: str = Field("redis://localhost:6379/1", description="URL for Celery result backend (e.g., redis, db+postgresql)")
 

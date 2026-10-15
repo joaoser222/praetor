@@ -1,7 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
-# Shared properties
+# Propriedades compartilhadas
 class UserBase(BaseModel):
     email: str
     username: str
@@ -9,7 +9,7 @@ class UserBase(BaseModel):
     is_active: bool = True
     is_superuser: bool = False
 
-# Properties to receive via API on creation
+# Propriedades recebidas via API na criação
 class UserCreate(BaseModel):
     email: str
     username: str
@@ -17,7 +17,7 @@ class UserCreate(BaseModel):
     full_name: Optional[str] = None
     is_superuser: bool = False
 
-# Properties to receive via API on update
+# Propriedades recebidas via API na atualização
 class UserUpdate(BaseModel):
     email: Optional[str] = None
     username: Optional[str] = None
@@ -30,12 +30,12 @@ class UserLogin(BaseModel):
 class RefreshTokenRequest(BaseModel):
     refresh_token: str = Field(..., description="The refresh token to use for getting a new access token")
 
-# Properties to return to client
+# Propriedades retornadas ao cliente
 class UserResponse(UserBase):
     id: int
     model_config = ConfigDict(from_attributes=True)
 
-# Properties for token
+# Propriedades do token
 class Token(BaseModel):
     access_token: str
     refresh_token: str

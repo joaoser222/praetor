@@ -1,20 +1,20 @@
 """
-Dependency Injection for the '{{name}}' app.
+Injeção de Dependências para o app '{{name}}'.
 
-This module contains functions that can be used as FastAPI dependencies
-to provide services, repositories, or other resources to the API endpoints.
+Este módulo contém funções que podem ser usadas como dependências do FastAPI
+para fornecer serviços, repositórios ou outros recursos aos endpoints da API.
 
-By defining dependencies here, you can centralize the logic for obtaining
-and configuring resources, making your endpoints cleaner and more testable.
+Ao definir dependências aqui, você centraliza a lógica de obtenção
+e configuração de recursos, tornando seus endpoints mais limpos e testáveis.
 
-Example:
+Exemplo:
     from fastapi import Depends, APIRouter
     from .services.some_service import SomeService
 
     router = APIRouter()
 
     def get_some_service() -> SomeService:
-        # This could involve getting a DB session, etc.
+        # Isto pode envolver a obtenção de uma sessão de banco, etc.
         return SomeService()
 
     @router.get("/")
@@ -22,4 +22,4 @@ Example:
         return service.get_all()
 """
 
-# Add your app-specific dependency functions here.
+# Adicione aqui as funções de dependência específicas do seu app.

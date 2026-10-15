@@ -11,12 +11,12 @@ from core.utils import to_pascal_case
 
 @click.group("generate")
 def generate_cli():
-    """Code generation commands."""
+    """Comandos de geração de código."""
     pass
 
 
 def get_model_attributes(model_class):
-    """Inspects a SQLAlchemy model and returns its column attributes with type hints."""
+    """Inspeciona um modelo SQLAlchemy e retorna seus atributos de coluna com type hints."""
     attributes = {}
     dynamic_imports = {
         "typing": ["Optional"]
@@ -29,7 +29,7 @@ def get_model_attributes(model_class):
             type_name = python_type.__name__
             module_name = python_type.__module__
 
-            # Generate importation of modules of types dynamically
+            # Gera a importação de módulos de tipos dinamicamente
             if(module_name != "builtins"):
                 if(not dynamic_imports.get(module_name)):
                     dynamic_imports[module_name] = []
@@ -37,8 +37,8 @@ def get_model_attributes(model_class):
                 if(type_name not in dynamic_imports[module_name]):
                     dynamic_imports[module_name].append(type_name)
 
-            # Wrap nullable columns in Optional, except for the id.
-            # The template handles making fields optional for the Update schema.
+            # Envolve colunas anuláveis em Optional, exceto o id.
+            # O template trata de tornar os campos opcionais para o schema de Update.
             if column.nullable and prop.key != 'id':
                 attributes[prop.key] = f"Optional[{type_name}]"
             else:
@@ -56,10 +56,10 @@ def get_model_attributes(model_class):
 @click.option("--force", is_flag=True, help="Force overwrite of existing file without confirmation.")
 def generate_schemas(entity: str, app: str, force: bool):
     """
-    Generates CRUD Pydantic schemas based on an entity model.
+    Gera schemas Pydantic de CRUD com base no modelo de uma entidade.
 
-    This command inspects the columns of a SQLAlchemy model and generates
-    Create, Update, and Read schemas using Jinja2 templates.
+    Este comando inspeciona as colunas de um modelo SQLAlchemy e gera
+    os schemas Create, Update e Read usando templates Jinja2.
     """
 
     entity_name_lower = entity.lower()
@@ -81,16 +81,16 @@ def generate_schemas(entity: str, app: str, force: bool):
     click.echo(f"Inspecting model '{entity_name_pascal}' in app '{app}'...")
 
     try:
-        # Dynamically import the model class
+        # Importa dinamicamente a classe do modelo
         module_path = f"apps.{app}.models.{entity_name_lower}"
         module = importlib.import_module(module_path)
         model_class = getattr(module, entity_name_pascal)
 
-        # Get model attributes
+        # Obtém os atributos do modelo
         attributes,dynamic_imports = get_model_attributes(model_class)
         click.echo(f"Found attributes: {list(attributes.keys())}")
 
-        # Check if there are any attributes other than the base ones
+        # Verifica se há algum atributo além dos atributos base
         user_defined_attributes = {
             k for k in attributes.keys() if k not in ['id', 'created_at', 'updated_at']
         }
@@ -109,25 +109,25 @@ def generate_schemas(entity: str, app: str, force: bool):
         )
         return
     
-    # Setup Jinja2 environment
+    # Configura o ambiente Jinja2
     template_dir = Path("core/templates/entity")
     env = Environment(loader=FileSystemLoader(template_dir))
     template = env.get_template("schema.py.j2")
 
-    # Prepare context for the template
+    # Prepara o contexto para o template
     context = {
         "class_name": entity_name_pascal,
         "attributes": attributes,
         "dynamic_imports": dynamic_imports
     }
 
-    # Render the template
+    # Renderiza o template
     rendered_code = template.render(context)
 
-    # Write the generated schema file
+    # Escreve o arquivo de schema gerado
     schema_output_path = app_path / "schemas" / f"{entity_name_lower}.py"
 
-    # Check if file already exists and ask for confirmation
+    # Verifica se o arquivo já existe e pede confirmação
     if schema_output_path.exists() and not force:
         click.secho(
             f"Warning: The file '{schema_output_path}' will be overwritten based on the model '{model_path}'.", fg="yellow"
@@ -136,7 +136,7 @@ def generate_schemas(entity: str, app: str, force: bool):
             click.echo("Generation skipped.")
             return
 
-    schema_output_path.parent.mkdir(parents=True, exist_ok=True) # Ensure directory exists
+    schema_output_path.parent.mkdir(parents=True, exist_ok=True) # Garante que o diretório exista
     schema_output_path.write_text(rendered_code)
 
     click.secho(

@@ -7,10 +7,10 @@ from config.logging import logger
 
 class BaseAppConfig:
     """
-    Base configuration class for an app.
+    Classe de configuração base para um app.
 
-    Each app should have an apps.py file with a class that inherits from this one.
-    This class is responsible for loading its own components, such as routers.
+    Cada app deve ter um arquivo app.py com uma classe que herda desta.
+    Esta classe é responsável por carregar seus próprios componentes, como os routers.
     """
 
     def __init__(self, app_path: Path):
@@ -23,7 +23,7 @@ class BaseAppConfig:
     @property
     def router(self) -> APIRouter:
         """
-        Lazily loads and returns the aggregated APIRouter for the app.
+        Carrega de forma preguiçosa (lazy) e retorna o APIRouter agregado do app.
         """
         if self._router is None:
             self._router = self._load_router()
@@ -31,17 +31,17 @@ class BaseAppConfig:
 
     def _load_router(self) -> APIRouter:
         """
-        Discovers and aggregates all APIRouters from the app's 'routers' directory.
+        Descobre e agrega todos os APIRouters do diretório 'routers' do app.
 
-        It scans for all .py files in the routers subdirectory, imports them,
-        finds any APIRouter instance (conventionally named 'router'), and includes
-        it in a main app-level router.
+        Varre todos os arquivos .py do subdiretório routers, importa-os,
+        encontra qualquer instância de APIRouter (convencionalmente chamada 'router') e a
+        inclui em um router principal do app.
         """
         app_level_router = APIRouter()
         routers_dir = self.path / "routers"
 
         if not routers_dir.is_dir():
-            return app_level_router  # Return empty router if no routers dir
+            return app_level_router  # Retorna um router vazio se não houver diretório de routers
 
         for router_file in routers_dir.glob("*.py"):
             if router_file.stem.startswith("_"):

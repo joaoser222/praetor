@@ -11,15 +11,15 @@ from .repositories.user import UserRepository
 
 class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
     """
-    FastAPI native security scheme extended to support HttpOnly cookies.
-    This enables the 'Authorize' button in Swagger UI while maintaining
-    the hybrid (Header + Cookie) authentication model.
+    Esquema de segurança nativo do FastAPI estendido para suportar cookies HttpOnly.
+    Isso habilita o botão 'Authorize' do Swagger UI, mantendo o modelo híbrido
+    de autenticação (Header + Cookie).
     """
     async def __call__(self, request: Request) -> Optional[str]:
-        # 1. Try to get token from standard Authorization header (FastAPI default)
+        # 1. Tenta obter o token do header Authorization padrão (padrão do FastAPI)
         token: Optional[str] = await super().__call__(request)
         
-        # 2. If not in header, try to get from cookie
+        # 2. Se não estiver no header, tenta obter do cookie
         if not token:
             token = request.cookies.get("access_token")
 
@@ -35,14 +35,14 @@ class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
         return token
 
 
-# Initialize the scheme pointing to the login endpoint
+# Inicializa o esquema apontando para o endpoint de login
 oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/api/auth/action/login")
 
 
 
 async def get_token_payload(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
     """
-    Decodes and validates the JWT token.
+    Decodifica e valida o token JWT.
     """
     if not is_jwt_token(token):
         raise HTTPException(
@@ -70,7 +70,7 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """
-    Get current user from database using the token payload.
+    Obtém o usuário atual a partir do banco de dados usando o payload do token.
     """
     user_id = payload.get("sub")
     if not user_id:

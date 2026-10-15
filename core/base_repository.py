@@ -17,18 +17,18 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.db = db
 
     async def get(self, pk: Any) -> Optional[ModelType]:
-        """Get a single record by primary key."""
+        """Obtém um único registro pela chave primária."""
         result = await self.db.get(self.model, pk)
         return result
 
     async def get_multi(self, *, skip: int = 0, limit: int = 100) -> List[ModelType]:
-        """Get multiple records with pagination."""
+        """Obtém múltiplos registros com paginação."""
         query = select(self.model).offset(skip).limit(limit)
         result = await self.db.execute(query)
         return result.scalars().all()
 
     async def create(self, *, obj_in: CreateSchemaType) -> ModelType:
-        """Create a new record."""
+        """Cria um novo registro."""
         obj_in_data = obj_in.model_dump()
         db_obj = self.model(**obj_in_data)
         self.db.add(db_obj)
@@ -37,7 +37,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db_obj
 
     async def update(self, *, pk: Any, obj_in: UpdateSchemaType) -> Optional[ModelType]:
-        """Update an existing record."""
+        """Atualiza um registro existente."""
         db_obj = await self.get(pk)
         if not db_obj:
             return None
@@ -52,7 +52,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db_obj
 
     async def delete(self, *, pk: Any) -> Optional[ModelType]:
-        """Delete a record."""
+        """Remove um registro."""
         db_obj = await self.get(pk)
         if db_obj:
             await self.db.delete(db_obj)
@@ -60,7 +60,7 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db_obj
 
     async def get_by_field(self, field: str, value: Any) -> Optional[ModelType]:
-        """Get a single record by a specific field."""
+        """Obtém um único registro por um campo específico."""
         query = select(self.model).where(getattr(self.model, field) == value)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()

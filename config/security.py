@@ -21,7 +21,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(pwd_bytes, hash_bytes)
 
 
-# ==================== JWT Token Functions ====================
+# ==================== Funções de token JWT ====================
 
 def create_access_token(data: Dict[str, Any]) -> str:
     to_encode = data.copy()
@@ -47,14 +47,14 @@ def decode_token(token: str) -> Dict[str, Any]:
 
 def is_jwt_token(token: str) -> bool:
     """
-    Check if a token is a valid JWT.
-    JWTs have the format: header.payload.signature (3 parts separated by dots)
+    Verifica se um token é um JWT válido.
+    JWTs têm o formato: header.payload.signature (3 partes separadas por pontos)
     """
     try:
         parts = token.split('.')
         if len(parts) != 3:
             return False
-        # Try to decode to verify if it's a valid JWT
+        # Tenta decodificar para verificar se é um JWT válido
         jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM], options={"verify_signature": False})
         return True
     except Exception:
@@ -62,21 +62,21 @@ def is_jwt_token(token: str) -> bool:
 
 
 
-# ==================== Opaque Token Functions ====================
+# ==================== Funções de token opaco ====================
 
 def generate_opaque_token() -> str:
     """
-    Generate a random and secure opaque token.
-    Opaque tokens are random strings that don't contain decodable information.
+    Gera um token opaco aleatório e seguro.
+    Tokens opacos são strings aleatórias que não contêm informação decodificável.
     """
-    return secrets.token_urlsafe(32)  # 32 bytes = 256 bits of entropy
+    return secrets.token_urlsafe(32)  # 32 bytes = 256 bits de entropia
 
 
 def get_opaque_token_expiry() -> datetime:
-    """Return the expiration date for an opaque access token."""
+    """Retorna a data de expiração para um token de acesso opaco."""
     return datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
 
 def get_opaque_refresh_token_expiry() -> datetime:
-    """Return the expiration date for an opaque refresh token."""
+    """Retorna a data de expiração para um token de refresh opaco."""
     return datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
