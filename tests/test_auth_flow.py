@@ -28,6 +28,7 @@ async def _register_and_login(client, payload=REGISTER_PAYLOAD):
 @pytest.mark.asyncio
 async def test_register_login_profile_refresh_logout(client):
     tokens = await _register_and_login(client)
+    assert client.cookies.get("access_token"), "login deveria gravar o cookie HttpOnly"
     headers = {"Authorization": f"Bearer {tokens['access_token']}"}
 
     response = await client.get("/api/auth/action/profile", headers=headers)

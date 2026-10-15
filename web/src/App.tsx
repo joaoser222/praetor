@@ -5,6 +5,7 @@ import LoginPage from '@/features/auth/action/pages/LoginPage';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import type { RouteConfig } from '@/lib/routes';
+import { clearSession, isAuthenticated } from '@/lib/auth';
 
 // ----------------------------------------------------------------------
 // Descoberta dinâmica de rotas
@@ -25,13 +26,12 @@ const allRoutes: RouteConfig[] = Object.values(featureModules).flatMap((module) 
 // Proteção de autenticação
 // ----------------------------------------------------------------------
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = !!localStorage.getItem('access_token');
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+  return isAuthenticated() ? <>{children}</> : <Navigate to="/login" />;
 };
 
 function App() {
   const handleLogout = () => {
-    localStorage.removeItem('access_token');
+    clearSession();
     window.location.href = '/login';
   };
 
