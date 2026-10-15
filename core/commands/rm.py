@@ -118,7 +118,7 @@ def rm_entity(name: str, app: str, only: str, except_: str, force: bool):
     
     # Confirmação
     if not force:
-        click.secho(f"⚠ The following components will be removed:", fg="yellow", bold=True)
+        click.secho("⚠ The following components will be removed:", fg="yellow", bold=True)
         for component in existing_files.keys():
             click.echo(f"  - {component}")
         if not click.confirm("\nAre you sure you want to continue?", default=False):

@@ -213,7 +213,7 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
         # Verifica se o arquivo já existe
         if os.path.exists(target_path):
             click.secho(f"⚠ File already exists: {display_path}", fg="yellow")
-            if not click.confirm(f"  Overwrite?", default=False):
+            if not click.confirm("  Overwrite?", default=False):
                 click.secho(f"  Skipped: {component}", fg="yellow")
                 continue
         
@@ -254,7 +254,7 @@ def make_command(name: str):
     # Cria o diretório commands, caso não exista
     if not os.path.exists(command_root):
         os.makedirs(command_root)
-        open(os.path.join(command_root, f"__init__.py"), "w").close()
+        open(os.path.join(command_root, "__init__.py"), "w").close()
 
     if os.path.exists(command_path):
         click.echo(f"Command file 'commands/{name}.py' already exists.")
@@ -277,7 +277,7 @@ def make_middleware(name: str):
     # Cria o diretório middlewares, caso não exista
     if not os.path.exists(middleware_root):
         os.makedirs(middleware_root)
-        open(os.path.join(middleware_root, f"__init__.py"), "w").close()
+        open(os.path.join(middleware_root, "__init__.py"), "w").close()
 
     if os.path.exists(middleware_path):
         click.echo(f"Middleware file 'middlewares/{name}.py' already exists.")

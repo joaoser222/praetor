@@ -10,7 +10,6 @@ def shell():
         start_ipython(argv=[])
     except ImportError:
         click.echo("IPython not found, falling back to standard Python shell.")
-        import readline  # opcional, para histórico
         
         vars = globals()
         vars.update(locals())

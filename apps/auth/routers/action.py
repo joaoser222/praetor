@@ -1,10 +1,8 @@
-from typing import List
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.database import get_db
-from core.exceptions import NotFoundException
 from .. import dependencies
 from ..schemas import user as schemas
 from ..services.user import UserService

@@ -4,7 +4,7 @@ from pathlib import Path
 from alembic.config import Config
 from alembic import command
 
-from config.database import engine, AsyncSessionFactory
+from config.database import engine
 from core.base_model import BaseModel
 from config.settings import settings
 
