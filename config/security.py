@@ -5,6 +5,7 @@ import bcrypt
 import secrets
 
 from config.settings import settings
+from config.time import utc_now
 from core.exceptions import UnauthorizedException
 
 
@@ -74,9 +75,9 @@ def generate_opaque_token() -> str:
 
 def get_opaque_token_expiry() -> datetime:
     """Retorna a data de expiração para um token de acesso opaco."""
-    return datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return utc_now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
 
 def get_opaque_refresh_token_expiry() -> datetime:
     """Retorna a data de expiração para um token de refresh opaco."""
-    return datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    return utc_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)

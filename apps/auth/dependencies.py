@@ -79,7 +79,7 @@ async def get_current_user(
     user_repo = UserRepository(db)
     user = await user_repo.get(int(user_id))
     
-    if user is None or not user.status:
+    if user is None or not user.is_active:
         raise UnauthorizedException(detail="User not found or inactive")
         
     return user

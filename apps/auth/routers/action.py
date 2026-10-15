@@ -18,6 +18,8 @@ async def register_user(
     user_in: schemas.UserCreate, db: AsyncSession = Depends(get_db)
 ):
     """Registra um novo usuário."""
+    # O registro público nunca concede privilégios de superusuário.
+    user_in = user_in.model_copy(update={"is_superuser": False})
     user_service = UserService(db)
     return await user_service.create_user(user_in)
 

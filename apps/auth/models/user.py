@@ -17,6 +17,8 @@ class User(BaseModel):
     role_id = Column(Integer, ForeignKey("auth_roles.id"), nullable=True)
 
     role = relationship("Role", back_populates="users")
-    user_permissions = relationship("UserPermission", back_populates="user")
+    user_permissions = relationship(
+        "UserPermission", back_populates="user", cascade="all, delete-orphan"
+    )
 
-    tokens = relationship("Token", back_populates="user")
+    tokens = relationship("Token", back_populates="user", cascade="all, delete-orphan")

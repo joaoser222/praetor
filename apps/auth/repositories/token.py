@@ -1,8 +1,9 @@
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import datetime
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config.time import utc_now
 from core.base_repository import BaseRepository
 from ..models.token import Token
 
@@ -78,7 +79,7 @@ class TokenRepository(BaseRepository[Token, dict, dict]):
 
     async def cleanup_expired_tokens(self) -> int:
         """Remove do banco de dados os tokens expirados."""
-        now = datetime.now(timezone.utc)
+        now = utc_now()
         query = select(self.model).where(self.model.expires_at < now)
         result = await self.db.execute(query)
         expired_tokens = result.scalars().all()
@@ -101,7 +102,7 @@ class TokenRepository(BaseRepository[Token, dict, dict]):
         if not db_token.is_active:
             return False
         
-        if db_token.expires_at < datetime.now(timezone.utc):
+        if db_token.expires_at < utc_now():
             return False
         
         return True

@@ -7,6 +7,7 @@ from config.security import (
     generate_opaque_token,
     get_opaque_refresh_token_expiry,
 )
+from config.time import utc_now
 from core.base_service import BaseService
 from core.exceptions import UnauthorizedException, ValidationException
 from ..models import User
@@ -109,8 +110,7 @@ class UserService(BaseService):
             raise UnauthorizedException(detail="Refresh token has been revoked")
         
         # Verifica a expiração
-        from datetime import datetime, timezone
-        if db_token.expires_at < datetime.now(timezone.utc):
+        if db_token.expires_at < utc_now():
             raise UnauthorizedException(detail="Refresh token has expired")
         
         # Obtém o usuário
