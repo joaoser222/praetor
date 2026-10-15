@@ -1,5 +1,6 @@
 import asyncio
 import click
+from pathlib import Path
 from alembic.config import Config
 from alembic import command
 
@@ -9,6 +10,13 @@ from config.settings import settings
 
 alembic_cfg = Config("alembic.ini")
 alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
+VERSIONS_DIR = Path(settings.BASE_DIR) / "migrations" / "versions"
+
+
+def _has_revisions() -> bool:
+    """Indica se existe ao menos um arquivo de revisão em migrations/versions."""
+    return VERSIONS_DIR.is_dir() and any(VERSIONS_DIR.glob("*.py"))
 
 
 @click.group('db')
@@ -55,6 +63,13 @@ def db_makemigrations(message: str):
 @db_cli.command("db:migrate")
 def db_migrate():
     """Aplica todas as migrações pendentes."""
+    if not _has_revisions():
+        click.secho(
+            "Nenhuma revisão encontrada em migrations/versions. "
+            "Gere uma com 'python manage.py db:makemigrations -m \"mensagem\"'.",
+            fg="yellow",
+        )
+        return
     click.echo("Applying migrations...")
     command.upgrade(alembic_cfg, "head")
     click.echo("Migrations applied.")

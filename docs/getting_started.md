@@ -21,7 +21,7 @@ cp .env.example .env
 ## 2. Initialize Database & Security
 
 ```bash
-# Apply migrations
+# Apply migrations (o projeto já inclui a migração inicial do schema)
 python manage.py db:migrate
 
 # Create an Admin user
@@ -30,6 +30,9 @@ python manage.py auth:createsuperuser
 # Generate initial system permissions
 python manage.py auth:makepermissions
 ```
+
+> Para desenvolvimento rápido, `python manage.py db:create` cria as tabelas
+> diretamente a partir dos models, sem usar o histórico de migrações.
 
 ## 3. The Development Loop
 

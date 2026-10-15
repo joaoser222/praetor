@@ -13,7 +13,6 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
-import importlib
 
 # Carrega as variáveis de ambiente do .env
 load_dotenv()
@@ -26,18 +25,11 @@ fileConfig(config.config_file_name)
 # Importa seus modelos
 from core.base_model import BaseModel
 from core.utils import auto_discover_apps
-from core.apps import app_registry
 
-# Descobre todos os apps registrados
+# Descobre todos os apps registrados.
+# A própria descoberta importa o pacote de models de cada app, o que popula
+# o BaseModel.metadata usado pelo autogenerate.
 auto_discover_apps()
-
-# Importa o módulo de models de cada app para popular BaseModel.metadata
-for app_config in app_registry.apps:
-    try:
-        importlib.import_module(f"{app_config.module_path}.models")
-    except ImportError:
-        # Se um app não tiver models.py, apenas ignora
-        pass
 
 target_metadata = BaseModel.metadata
 def do_run_migrations(connection: Connection):

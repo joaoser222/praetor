@@ -14,6 +14,10 @@ The `manage.py` utility is the primary tool for managing the lifecycle of your a
 - `python manage.py db:migrate`: Upgrade database to the latest version.
 - `python manage.py db:rollback`: Downgrade database one step.
 
+> **Caminho canônico:** use `db:migrate` (migrações versionadas em `migrations/versions/`)
+> para subir o schema. `db:create` cria as tabelas diretamente a partir dos models e
+> serve para desenvolvimento rápido, dispensando o histórico de migrações.
+
 ## Code Generation (`make`)
 
 The `make` commands ensure architectural consistency by generating boilerplate for both backend and frontend.
