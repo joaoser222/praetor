@@ -48,7 +48,7 @@ cd praetor
 # Setup Backend
 python -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[dev]"
 cp .env.example .env
 
 # Setup Frontend
@@ -74,14 +74,18 @@ python manage.py make:entity product --app store
 
 ### 4. Run Everything
 
-Running with Docker (Recommended):
+**Development** (SQLite + Vite dev server):
 ```bash
-cp docker-compose.example.yml docker-compose.yml
-cp Dockerfile.example Dockerfile
-cp Dockerfile.web.example Dockerfile.web
-docker-compose up --build
+cp .env.example .env
+docker compose up --build
 ```
 *API available at `http://localhost:8000`, Frontend at `http://localhost:5173`.*
+
+**Production** (PostgreSQL + nginx) — set `SECRET_KEY` and `POSTGRES_PASSWORD` in `.env` first:
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
+```
+*API available at `http://localhost:8000`, Frontend at `http://localhost:8080`.*
 
 ## 📂 Project Structure
 
@@ -95,7 +99,14 @@ praetor/
 │   ├── src/components/  # Layout (AppShell) and DataTable (Mantine)
 │   └── src/lib/         # i18n, API client
 ├── manage.py            # The Heart of the DX
-└── docker-compose.yml   # Full-stack orchestration
+├── docker-compose.yml       # Shortcut -> docker/compose/develop.yml
+├── docker-compose.prod.yml  # Shortcut -> docker/compose/production.yml
+└── docker/                  # Everything container-related
+    ├── Dockerfile*          # Backend/frontend images (dev & prod)
+    └── compose/
+        ├── base.yml         # Shared components (backend/frontend/redis)
+        ├── develop.yml      # Develop (SQLite + Vite dev server)
+        └── production.yml   # Production (PostgreSQL + nginx)
 ```
 
 ---

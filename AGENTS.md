@@ -32,11 +32,11 @@ Rode `python manage.py --help` para a lista real. Os comandos são registrados *
 - Worker: `python manage.py run:worker` (Celery; precisa de Redis)
 - Frontend (`web/`): `npm install`, `npm run dev`, `npm run build` (`tsc -b && vite build`), `npm run lint`
 - Testes: `pytest` (como no CI) ou `python manage.py run:test [app]`. O `python manage.py test` da documentação **não existe**.
-- Lint de backend: `ruff check .` (config em `pyproject.toml`; `ruff` está em `requirements-dev.txt`).
-- Dependências: runtime em `requirements.txt`, ferramentas de dev/teste em `requirements-dev.txt` (`-r requirements.txt` + `pytest`, `httpx`, `ruff`, `ipython`).
+- Lint de backend: `ruff check .` (config e a própria dependência `ruff` no `pyproject.toml`, extra `dev`).
+- Dependências: **todas no `pyproject.toml`** — runtime em `[project].dependencies` e ferramentas de dev/teste em `[project.optional-dependencies].dev` (`pytest`, `httpx`, `ipython`, `ruff`). **Não há mais `requirements*.txt`**: instale com `pip install -e ".[dev]"` (ou `pip install .` para só o runtime). O projeto é tratado como **aplicação**, não como pacote (`[tool.setuptools] packages = []`), então o build instala apenas as dependências, sem copiar o código.
 
 ## Testes
-- CI (`.github/workflows/ci.yml`) tem 3 jobs: **backend** (Python 3.12, `pip install -r requirements-dev.txt`, `ruff check .`, `pytest`, com Redis), **frontend** (`npm ci && npm run lint && npm run build`) e **codegen** (roda `make:app sample` + `make:entity product` e depois `npm run build` no `web/`).
+- CI (`.github/workflows/ci.yml`) tem 3 jobs: **backend** (Python 3.12, `pip install -e ".[dev]"`, `ruff check .`, `pytest`, com Redis), **frontend** (`npm ci && npm run lint && npm run build`) e **codegen** (roda `make:app sample` + `make:entity product` e depois `npm run build` no `web/`).
 - `pytest` é configurado em `pyproject.toml`: `asyncio_mode = "auto"`, `testpaths = ["tests", "apps"]`, `python_files = ["test_*.py", "*_test.py"]`.
 - `conftest.py` fica **na raiz** (para atender `apps/*/tests`), usa fixtures `pytest_asyncio` + `httpx.AsyncClient` e SQLite em arquivo (`./test.db`), criando/derrubando tabelas por teste e sobrescrevendo `get_db`.
 - O metadata do SQLAlchemy é populado pela auto-descoberta (`core.utils.auto_discover_apps` importa `apps.<app>.models`), então o `create_all` dos testes e o `db:create` enxergam as tabelas.
@@ -64,5 +64,24 @@ Rode `python manage.py --help` para a lista real. Os comandos são registrados *
 - Os templates de frontend em `core/templates/frontend/` geram componentes Mantine (`Paper`, `TextInput`, `Button`, `Table` via `DataTable`, `notifications`) e o `make:entity` cria `pages/List.tsx`, `pages/Create.tsx`, `pages/Update.tsx` e `components/Form.tsx` — todos compilam sob `strict`.
 - Os testes gerados são gravados como `apps/<app>/tests/test_<entity>.py` (coletáveis pelo `pytest`).
 
+## Filas e tarefas assíncronas (Celery + Redis)
+- **Decisão: manter o Redis.** Ele é o *broker*/*result backend* do Celery (`CELERY_BROKER_URL`/`CELERY_RESULT_BACKEND`) e é o que habilita a **gestão gráfica** das filas — via **Flower** (workers, tarefas por estado, `revoke`, rate-limit), o equivalente ao Horizon do Laravel. O serviço `redis` em `docker/compose/base.yml` é intencional, não peso morto.
+- Hoje o Celery está configurado mas **não há tasks** no projeto (`apps/*/tasks.py` são stubs vazios); a API **não** usa o Redis — só o `worker` consome o broker. Subir `redis` + `worker` é opt-in de quem for usar tarefas.
+- **Por que não fila em banco** (avaliado e descartado):
+  - Fila em tabelas do próprio banco (models SQLAlchemy + Alembic + worker com *polling*): mais custo de código e de processamento — com broker o worker fica **bloqueado** esperando (ocioso ~0 de CPU), enquanto fila em banco paga *polling* — e não traz dashboard pronto.
+  - Filas nativas de Postgres (pgqueuer, Procrastinate): código baixo e sem Redis, porém **Postgres-only** (o dev usa SQLite) e sem UI gráfica pronta.
+  - Celery com broker Postgres (`kombu-pgmq`): remove o Redis, mas depende de lib de terceiros e exige a extensão PGMQ (Postgres-only).
+- **Refinamento opcional**: para persistir/consultar os jobs no banco, trocar `CELERY_RESULT_BACKEND` para `db+sqlite:///...` (dev) / `db+postgresql://...` (prod; exige `celery[sqlalchemy]` + driver síncrono) — o Celery cria as tabelas `celery_taskmeta`/`celery_tasksetmeta` sozinho — e adicionar um serviço `flower` (com `flower` em `pyproject.toml`) no Compose para o dashboard.
+
 ## Docker
-- Os arquivos de container são exemplos: `docker-compose.example.yml`, `Dockerfile.example`, `Dockerfile.web.example`. O `docker-compose up` do README falha até serem copiados/renomeados. O compose sobrescreve `DATABASE_URL` para SQLite em `./data/database.db`, usa Redis para api/worker, API na 8000 e web na 5173.
+- Env **central**: um único `.env` na raiz para todos os ambientes (não há `.env` por ambiente). O `config/settings.py` também lê esse arquivo quando a app roda fora do Docker.
+- Estrutura em `docker/` (tudo sobre containers), montada por `include:` do Compose:
+  - `docker/compose/base.yml` — componentes compartilhados (backend `api`/`worker`, frontend `web`, infra `redis`). **Não** é um ambiente. Atenção: em `include`, TODOS os caminhos relativos (context, dockerfile, env_file e volumes) resolvem a partir da pasta do próprio arquivo, por isso em `docker/compose/` usam `../../` para chegar à raiz.
+  - `docker/compose/develop.yml` / `docker/compose/production.yml` — os **ambientes**; ambos importam `base.yml` e sobrescrevem só o que difere.
+  - `docker-compose.yml` / `docker-compose.prod.yml` (raiz) — atalhos que apenas importam os ambientes acima, para `docker compose up` seguir funcionando da raiz. O `name` é repetido neles de propósito: o Compose **não** propaga o top-level `name` de arquivo incluído.
+- Dockerfiles em `docker/`: `Dockerfile`/`Dockerfile.prod` (backend; o de prod é multi-stage) e `Dockerfile.web`/`Dockerfile.web.prod` (frontend; o de prod faz build estático + nginx, com `web/nginx.conf` fazendo proxy de `/api`). Os `.dockerignore` ficam na raiz do respectivo contexto de build: `.dockerignore` (backend, raiz do repo) e `web/.dockerignore` (frontend).
+- As imagens instalam as dependências a partir do `pyproject.toml` (`COPY pyproject.toml` + `pip install .`), mantendo o layer cacheável — **não há `requirements.txt`** no build.
+- **Identidade configurável**: `PROJECT_NAME` (slug em minúsculas, no `.env`) define o nome do projeto Compose, as imagens (`<PROJECT_NAME>-api`/`-web`, com `:prod` em produção) e, por consequência, os nomes de containers e da rede (`<PROJECT_NAME>_default`). Para reaproveitar o boilerplate noutro projeto, basta trocar essa variável. Não há rede customizada — usa-se a rede default do Compose.
+- As variáveis chegam aos containers por `env_file: [../../.env]` (base), com `environment:` sobrescrevendo só o que muda **dentro** da rede (broker/back-end do Celery; no prod, `DEBUG` e `DATABASE_URL`). O serviço `migrate` lê o `.env` diretamente. `config/settings.py` usa `extra="ignore"` para tolerar variáveis sem campo (ex.: `POSTGRES_*`, `PROJECT_NAME`) no `.env` compartilhado.
+- `build` é declarado **apenas** em `api` e `web`; `worker` e `migrate` reaproveitam a imagem (`<PROJECT_NAME>-api`) para evitar builds duplicados.
+- Comandos: `docker compose up --build` (develop) e `docker compose -f docker-compose.prod.yml up --build -d` (production). Requer Docker Compose ≥ 2.20 (por causa do `include`).
