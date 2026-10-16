@@ -1,6 +1,6 @@
 ---
 name: security-audit
-description: Threat-model and audit a codebase, commit range, or pull request for exploitable vulnerabilities, prompt and data injection, authentication or authorization bypass, tenant-data exposure, privilege escalation, malicious code/backdoors, unsafe execution, secrets leakage, supply-chain and CI compromise, insecure persistence, and denial of service. Use for dedicated security reviews, release gates, suspicious contributions, or requests to verify that a project protects users and their data.
+description: Threat-model and audit a codebase, commit range, or pull request for exploitable vulnerabilities, prompt and data injection, authentication or authorization bypass, user-data exposure, privilege escalation, malicious code/backdoors, unsafe execution, secrets leakage, supply-chain and CI compromise, insecure persistence, and denial of service. Use for dedicated security reviews, release gates, suspicious contributions, or requests to verify that a project protects users and their data.
 ---
 
 # Security Audit
@@ -13,6 +13,29 @@ Read [references/security-checklist.md](references/security-checklist.md) for
 every audit. Read only the sections in
 [references/ecosystem-checks.md](references/ecosystem-checks.md) whose manifest,
 framework, platform, or deployment surface actually exists in the project.
+
+## Project Map (Praetor)
+
+Where the security surfaces live in this repository. The applicable ecosystem
+sections in `references/ecosystem-checks.md` are **Python**, **JavaScript/
+TypeScript** and **Shell/CI/containers**.
+
+| Surface | Location |
+|---|---|
+| HTTP entry points | `backend/main.py`; routers auto-mounted at `/api/<app>` from `backend/apps/<app>/routers/*.py` |
+| Session auth | `backend/apps/auth/` — access JWT (`HS256`, 15 min) plus an opaque DB-backed refresh token (7 days), both in `HttpOnly` cookies (cookie-first) |
+| Crypto/hashing | `backend/config/security.py` (bcrypt, `jwt.encode/decode`, opaque tokens, `is_jwt_token`) |
+| Authorization/RBAC | `require_permission("<entity>:<action>")` and `require_role(...)` in `backend/core/dependencies.py`; `is_superuser` bypasses both |
+| Declared permissions | `backend/apps/<app>/permissions/*.py` (`DEFINED_PERMISSIONS`), synced by `auth:makepermissions` |
+| Config/secrets | `backend/config/settings.py` (required `SECRET_KEY` and `DATABASE_URL`; `COOKIE_SECURE` derived from `DEBUG`) and the central root `.env` |
+| Persistence | `backend/config/database.py` (async SQLAlchemy) and `backend/migrations/` (Alembic); `db:reset`/`db:drop` are destructive |
+| Background jobs | `backend/core/celery_app.py` (Redis) and `backend/apps/*/tasks.py` (empty stubs today) |
+| Generators (dev-only) | `tools/` — excluded from the production image (the build context is `backend/`) |
+| Images/deploy | `docker/` (backend `Dockerfile[.prod]` multi-stage non-root; `Dockerfile.frontend[.prod]` plus `frontend/nginx.conf` proxying `/api`) and `docker/compose/` |
+| CI/release | `.github/workflows/ci.yml` (jobs `backend`, `frontend`, `codegen`) |
+
+Treat the generator templates under `tools/templates/` as a code-execution
+surface: they emit application code into `backend/apps/<app>/`.
 
 ## Safety and Instruction Boundary
 
@@ -40,10 +63,11 @@ finding when untrusted text can reach a model/tool boundary with authority.
 Record:
 
 - immutable commit/range/PR head and dirty working-tree state;
-- assets: credentials, personal/tenant data, filesystem, code execution,
-  network, billing, availability, integrity, audit history;
-- actors: anonymous, authenticated user, tenant admin, global admin, local user,
-  plugin/hook, service, CI contributor, dependency maintainer, network attacker;
+- assets: credentials, personal user data, filesystem, code execution, network,
+  availability, integrity, audit history;
+- actors: anonymous, authenticated user, user holding an RBAC role/permission,
+  superuser, local user, plugin/hook, service, CI contributor, dependency
+  maintainer, network attacker;
 - entry points and trust transitions: HTTP/MCP/RPC, CLI, hooks, files/uploads,
   import/export, database, queues, plugins, subprocesses, LLM/tool calls,
   webhooks, background jobs, CI/release/deploy;
@@ -146,10 +170,11 @@ untrusted data.
 - **Dependabot** — `gh api repos/{o}/{r}/dependabot/alerts`. Per open alert read
   `.security_advisory.severity`, `.security_vulnerability.vulnerable_version_range`,
   and `.security_vulnerability.first_patched_version.identifier`. The fix is a
-  **bump to the patched version**, not an `--ignore`. A CI `cargo audit --ignore`,
-  `deny.toml` ignore, or equivalent suppression is a *deferral, not a
-  resolution* — flag undocumented ignores as unresolved debt, and after a real
-  fix **remove the now-obsolete ignore** so the advisory cannot silently regress.
+  **bump to the patched version**, not an `--ignore`. A CI dependency-audit
+  ignore (`pip-audit --ignore-vuln`, a Dependabot ignore entry, an allowlist
+  file, or equivalent) is a *deferral, not a resolution* — flag undocumented
+  ignores as unresolved debt, and after a real fix **remove the now-obsolete
+  ignore** so the advisory cannot silently regress.
   Weigh exploitability against the project's actual deployment posture
   (loopback-only single-user vs networked/multi-user) to set priority, but a
   HIGH advisory in a product that supports networked/team use should not ship
@@ -176,12 +201,13 @@ Follow data and authority end to end.
 
 1. **Authentication/session**: token creation, validation, expiry, revocation,
    replay, fixation, audience/issuer, constant-time comparison, secure storage.
-2. **Authorization/capabilities**: deny by default; check object/tenant scope on
-   every read and write; admin/root boundaries; confused deputy; mass assignment;
-   TOCTOU between check and use.
-3. **Tenant/data isolation**: identity tuple on storage/index/cache/search/file
-   paths; partial/missing scope fails closed; no cross-user inference via counts,
-   errors, logs, embeddings, backups, handoffs, or background jobs.
+2. **Authorization/capabilities**: deny by default; check object ownership/scope
+   on every read and write; admin/superuser boundaries; confused deputy; mass
+   assignment; TOCTOU between check and use.
+3. **Data isolation (per-user scope)**: identity tuple on storage/index/cache/
+   search/file paths; partial/missing scope fails closed; no cross-user
+   inference via counts, errors, logs, embeddings, backups, handoffs, or
+   background jobs.
 4. **Injection**: shell/argument, SQL/query, template, path traversal/symlink,
    header/host, SSRF, URL redirect, CRLF/log, regex, deserialization, archive,
    prompt/tool, HTML/JS, and formula injection where those sinks exist.
@@ -220,8 +246,8 @@ closed.
 
 After the static gate, design focused tests from the threat model:
 
-- unauthenticated, wrong-role, wrong-tenant, missing/partial identity, stale or
-  revoked credential;
+- unauthenticated, wrong-role, out-of-scope object, missing/partial identity,
+  stale or revoked credential;
 - traversal, symlink, alternate encoding/case/normalization, oversized and
   malformed input, duplicate/conflicting fields, archive edge cases;
 - shell/query/template/prompt payloads that remain inert and cannot select a
@@ -279,9 +305,10 @@ Each finding must include:
 Severity:
 
 - `Critical`: practical unauthenticated/low-privilege code execution, secret or
-  broad cross-tenant compromise, release compromise, or destructive impact.
-- `High`: significant auth bypass, tenant data access, privilege escalation,
-  injection, persistent compromise, or reliable major availability failure.
+  broad cross-user compromise, release compromise, or destructive impact.
+- `High`: significant auth bypass, unauthorized user-data access, privilege
+  escalation, injection, persistent compromise, or reliable major availability
+  failure.
 - `Medium`: constrained exploit with meaningful impact or defense-in-depth gap
   likely to combine with another weakness.
 - `Low`: limited hardening issue with small realistic impact.
