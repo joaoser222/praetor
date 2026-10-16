@@ -50,6 +50,46 @@ async def test_register_login_profile_refresh_logout(client):
 
 
 @pytest.mark.asyncio
+async def test_profile_authenticates_via_httponly_cookie(client):
+    """O cookie HttpOnly gravado no login deve autenticar sem header Authorization."""
+    await _register_and_login(client)
+
+    response = await client.get("/api/auth/action/profile")
+    assert response.status_code == 200, response.text
+    assert response.json()["email"] == REGISTER_PAYLOAD["email"]
+
+
+@pytest.mark.asyncio
+async def test_profile_requires_authentication(client):
+    """Sem header e sem cookie, o endpoint protegido responde 401."""
+    response = await client.get("/api/auth/action/profile")
+    assert response.status_code == 401, response.text
+
+
+@pytest.mark.asyncio
+async def test_refresh_and_logout_via_cookie_only(client):
+    """Refresh e logout funcionam só com os cookies HttpOnly (sem corpo)."""
+    await _register_and_login(client)
+
+    response = await client.post("/api/auth/action/refresh")
+    assert response.status_code == 200, response.text
+
+    response = await client.post("/api/auth/action/logout")
+    assert response.status_code == 200, response.text
+
+    # Depois do logout os cookies são limpos e o endpoint protegido rejeita.
+    response = await client.get("/api/auth/action/profile")
+    assert response.status_code == 401, response.text
+
+
+@pytest.mark.asyncio
+async def test_refresh_without_token_rejected(client):
+    """Sem corpo e sem cookie, o refresh responde 401."""
+    response = await client.post("/api/auth/action/refresh")
+    assert response.status_code == 401, response.text
+
+
+@pytest.mark.asyncio
 async def test_register_cannot_escalate_to_superuser(client):
     payload = {**REGISTER_PAYLOAD, "is_superuser": True}
     response = await client.post("/api/auth/action/register", json=payload)

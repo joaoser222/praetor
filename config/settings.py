@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 from pydantic import AnyHttpUrl, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,8 +17,16 @@ class Settings(BaseSettings):
     DATABASE_URL: str = Field(..., description="Database connection URL")
     SECRET_KEY: str = Field(..., description="JWT secret key")
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    # Curto de propósito: o access é um JWT stateless e não pode ser revogado
+    # antes do `exp`, então este valor define a janela máxima em que um token
+    # "deslogado" ainda é aceito. A renovação é transparente via refresh cookie.
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    # Cookies de auth: quando None, o atributo Secure é derivado de DEBUG
+    # (ligado fora de desenvolvimento). Defina explicitamente (ex.:
+    # COOKIE_SECURE=false) caso a app seja servida por HTTP fora de localhost.
+    COOKIE_SECURE: Optional[bool] = None
 
     # Configurações do Celery
     CELERY_BROKER_URL: str = Field("redis://localhost:6379/0", description="URL for Celery message broker (e.g., redis, amqp)")
@@ -38,6 +46,13 @@ class Settings(BaseSettings):
     @property
     def cors_origins_str(self) -> List[str]:
         return [str(u).rstrip("/") for u in self.CORS_ORIGINS]
+
+    @property
+    def cookie_secure(self) -> bool:
+        """Indica se os cookies de auth devem usar o atributo Secure."""
+        if self.COOKIE_SECURE is not None:
+            return self.COOKIE_SECURE
+        return not self.DEBUG
 
 
 settings = Settings()

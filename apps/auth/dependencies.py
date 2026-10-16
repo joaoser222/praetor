@@ -16,34 +16,38 @@ class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
     de autenticação (Header + Cookie).
     """
     async def __call__(self, request: Request) -> Optional[str]:
-        # 1. Tenta obter o token do header Authorization padrão (padrão do FastAPI)
+        # 1. Tenta obter o token do header Authorization padrão (padrão do FastAPI).
+        #    O esquema é criado com auto_error=False, então a ausência de header
+        #    devolve None em vez de lançar 401 — permitindo o fallback abaixo.
         token: Optional[str] = await super().__call__(request)
-        
-        # 2. Se não estiver no header, tenta obter do cookie
+
+        # 2. Se não estiver no header, tenta obter do cookie HttpOnly.
         if not token:
             token = request.cookies.get("access_token")
 
-        if not token:
-            if self.auto_error:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Not authenticated",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
-            return None
-
+        # A validação (e o 401 quando não há token) fica a cargo de `get_token_payload`.
         return token
 
 
-# Inicializa o esquema apontando para o endpoint de login
-oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/api/auth/action/login")
+# Inicializa o esquema apontando para o endpoint de login.
+# auto_error=False é essencial: sem ele o OAuth2PasswordBearer lançaria 401
+# ANTES de chegarmos ao fallback de cookie (que nunca seria alcançado).
+oauth2_scheme = OAuth2PasswordBearerWithCookie(
+    tokenUrl="/api/auth/action/login", auto_error=False
+)
 
 
-
-async def get_token_payload(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+async def get_token_payload(token: Optional[str] = Depends(oauth2_scheme)) -> Dict[str, Any]:
     """
-    Decodifica e valida o token JWT.
+    Decodifica e valida o token JWT (vindo do header Authorization ou do cookie HttpOnly).
     """
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if not is_jwt_token(token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

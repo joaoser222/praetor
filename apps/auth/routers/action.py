@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, Response, status
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,7 +18,7 @@ REFRESH_COOKIE = "refresh_token"
 
 def _set_auth_cookies(response: Response, tokens: dict) -> None:
     """Grava os tokens em cookies HttpOnly (além de devolvê-los no corpo)."""
-    secure = not settings.DEBUG
+    secure = settings.cookie_secure
     response.set_cookie(
         ACCESS_COOKIE,
         tokens["access_token"],
@@ -39,6 +41,26 @@ def _clear_auth_cookies(response: Response) -> None:
     """Remove os cookies de autenticação."""
     response.delete_cookie(ACCESS_COOKIE)
     response.delete_cookie(REFRESH_COOKIE)
+
+
+def _resolve_refresh_token(
+    request: Request, refresh_data: Optional[schemas.RefreshTokenRequest]
+) -> str:
+    """
+    Obtém o refresh token do corpo da requisição ou, na ausência dele, do cookie HttpOnly.
+
+    Isso permite que o SPA (cookie-first) faça refresh/logout sem expor o token ao JS,
+    mantendo compatibilidade com clientes que ainda enviam o token no corpo.
+    """
+    token = (refresh_data.refresh_token if refresh_data else None) or request.cookies.get(
+        REFRESH_COOKIE
+    )
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token ausente",
+        )
+    return token
 
 @router.post(
     "/register", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED 
@@ -74,44 +96,56 @@ async def login_for_access_token(
 
 @router.post("/refresh", response_model=schemas.Token)
 async def refresh_access_token(
+    request: Request,
     response: Response,
-    refresh_data: schemas.RefreshTokenRequest, db: AsyncSession = Depends(get_db)
+    refresh_data: Optional[schemas.RefreshTokenRequest] = None,
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Renova o token de acesso usando um token de refresh.
-    
+
+    O token de refresh é lido do corpo (se enviado) ou do cookie HttpOnly
+    'refresh_token', permitindo o fluxo cookie-first.
+
     Este endpoint:
     1. Valida o token de refresh opaco armazenado no banco de dados
     2. Gera um novo token de acesso JWT
     3. Gera um novo token de refresh (rotação de token por segurança)
     4. Revoga o token de refresh antigo
-    
+
     Isso permite:
     - Revogar sessões de usuários invalidando tokens de refresh no banco de dados
     - Manter a performance do JWT (sem consulta ao banco para tokens de acesso)
     - Ter controle refinado sobre as sessões ativas
     """
     user_service = UserService(db)
-    tokens = await user_service.refresh_access_token(refresh_data.refresh_token)
+    tokens = await user_service.refresh_access_token(
+        _resolve_refresh_token(request, refresh_data)
+    )
     _set_auth_cookies(response, tokens)
     return tokens
 
 @router.post("/logout")
 async def logout(
+    request: Request,
     response: Response,
-    refresh_data: schemas.RefreshTokenRequest, db: AsyncSession = Depends(get_db)
+    refresh_data: Optional[schemas.RefreshTokenRequest] = None,
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Faz logout do usuário revogando o token de refresh.
-    
+
+    O token de refresh é lido do corpo (se enviado) ou do cookie HttpOnly
+    'refresh_token', permitindo o fluxo cookie-first.
+
     Isso invalida o token de refresh, impedindo que ele seja usado
     para gerar novos tokens de acesso. O token de acesso atual (JWT)
-    continuará válido até expirar (curta duração, tipicamente 30 minutos).
-    
+    continuará válido até expirar (curta duração, tipicamente 15 minutos).
+
     Para revogar todas as sessões, use o endpoint /logout/all.
     """
     user_service = UserService(db)
-    result = await user_service.logout(refresh_data.refresh_token)
+    result = await user_service.logout(_resolve_refresh_token(request, refresh_data))
     _clear_auth_cookies(response)
     return result
 

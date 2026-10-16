@@ -28,7 +28,13 @@ class UserLogin(BaseModel):
     password: str
 
 class RefreshTokenRequest(BaseModel):
-    refresh_token: str = Field(..., description="The refresh token to use for getting a new access token")
+    refresh_token: Optional[str] = Field(
+        default=None,
+        description=(
+            "Refresh token opcional. Quando ausente, o token é lido do cookie "
+            "HttpOnly 'refresh_token' (fluxo cookie-first do SPA)."
+        ),
+    )
 
 # Propriedades retornadas ao cliente
 class UserResponse(UserBase):
