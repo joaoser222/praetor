@@ -10,20 +10,22 @@ proposta.
 
 ## Resumo
 
-| # | Severidade | Item | Arquivo(s) |
-|---|------------|------|------------|
-| 1 | 🔴 Alta | Autenticação por cookie inalcançável | `apps/auth/dependencies.py:18-24,39` |
-| 2 | 🔴 Alta | `db:reset` deixa o banco vazio e inutilizável | `core/commands/db.py:87-96` |
-| 3 | 🟠 Média | Logout do frontend não revoga a sessão no servidor | `web/src/features/auth/action/service.ts:24-27` |
-| 4 | 🟠 Média | Tokens em `localStorage` anulam o `HttpOnly` | `web/src/lib/auth.ts:10-13` |
-| 5 | 🟠 Média | Interceptor de refresh exclui `/profile` | `web/src/lib/api.ts:36-38` |
-| 6 | 🟠 Média | Cookie `Secure` em produção servido por HTTP | `apps/auth/routers/action.py:19` |
-| 7 | 🟠 Média | `docs/background_tasks.md` divergente do real | `docs/background_tasks.md:11` |
-| 8 | 🟡 Baixa | `docs/cli.md` aponta caminho errado do teste gerado | `docs/cli.md:39` |
-| 9 | 🟡 Baixa | `CONTRIBUTING.md` com bootstrap desatualizado | `CONTRIBUTING.md:137` |
-| 10 | 🟡 Baixa | Stub de teste do app `auth` não é coletado | `apps/auth/tests/user.py` |
-| 11 | 🟡 Baixa | CI `codegen` não valida o backend gerado | `.github/workflows/ci.yml:94-110` |
-| 12 | 🟡 Baixa | `version` duplicada (`pyproject` × `settings`) | `pyproject.toml` × `config/settings.py:11` |
+| # | Severidade | Item | Arquivo(s) | Status |
+|---|------------|------|------------|--------|
+| 1 | 🔴 Alta | Autenticação por cookie inalcançável | `apps/auth/dependencies.py:18-24,39` | ✅ |
+| 2 | 🔴 Alta | `db:reset` deixa o banco vazio e inutilizável | `core/commands/db.py:87-96` | ⬜ |
+| 3 | 🟠 Média | Logout do frontend não revoga a sessão no servidor | `web/src/features/auth/action/service.ts` | ✅ |
+| 4 | 🟠 Média | Tokens em `localStorage` anulam o `HttpOnly` | `web/src/lib/auth.ts` | ✅ |
+| 5 | 🟠 Média | Interceptor de refresh exclui `/profile` | `web/src/lib/api.ts:36-38` | ✅ |
+| 6 | 🟠 Média | Cookie `Secure` em produção servido por HTTP | `apps/auth/routers/action.py:19` | ✅ |
+| 7 | 🟠 Média | `docs/background_tasks.md` divergente do real | `docs/background_tasks.md:11` | ⬜ |
+| 8 | 🟡 Baixa | `docs/cli.md` aponta caminho errado do teste gerado | `docs/cli.md:39` | ⬜ |
+| 9 | 🟡 Baixa | `CONTRIBUTING.md` com bootstrap desatualizado | `CONTRIBUTING.md:137` | ⬜ |
+| 10 | 🟡 Baixa | Stub de teste do app `auth` não é coletado | `apps/auth/tests/user.py` | ⬜ |
+| 11 | 🟡 Baixa | CI `codegen` não valida o backend gerado | `.github/workflows/ci.yml:94-110` | ⬜ |
+| 12 | 🟡 Baixa | `version` duplicada (`pyproject` × `settings`) | `pyproject.toml` × `config/settings.py:11` | ⬜ |
+
+> **Lote A (itens 1, 3, 4, 5, 6) implementado.** Itens 2, 7–12 pendentes.
 
 ---
 
@@ -87,13 +89,12 @@ proposta.
   (`auth.ts:10-13`), legíveis por JS — anulando o motivo do cookie `HttpOnly`. O
   `refreshAccessToken` (`api.ts:20-24`) usa o refresh do storage; o cookie
   `refresh_token` do backend é write-only (nunca lido).
-- **Decisão necessária** (definir junto ao dono):
-  - **(A) Cookie-first** (recomendado se segurança for prioridade): manter só o
-    access token no storage e ler/rotacionar o refresh via cookie
-    (`withCredentials` já é `true`); o endpoint de refresh passa a ler o cookie.
-  - **(B) Header** (mínimo esforço): manter header, mas **não** persistir o
-    refresh em `localStorage` (guardá-lo em memória/cookie).
-- **Aceite**: nenhum refresh token legível por JS; sessão continua funcionando.
+- **Decisão tomada**: **(A) cookie-first completo** — nenhum token no JS. O estado
+  do SPA é reconstruído via `/profile` (`AuthProvider`), refresh/logout leem o
+  cookie `refresh_token`, e o front deixa de usar o header `Authorization` (que
+  segue aceito pela API e pelo Swagger).
+- **Aceite**: nenhum token legível por JS; sessão continua funcionando (validado
+  por smoke test real: login → cookie → profile/refresh/logout sem corpo → 401).
 
 ### 5. Interceptor de refresh exclui o próprio endpoint autenticado
 
@@ -110,9 +111,10 @@ proposta.
   (`DEBUG=False`) o cookie sai `Secure`, mas o nginx publica HTTP (`8080:80`).
   Browsers **descartam** cookie `Secure` sobre HTTP → sessão por cookie não
   persiste. (Só passa a "morder" depois de corrigir o item 1.)
-- **Correção**: tornar explícito via configuração, ex. adicionar
-  `COOKIE_SECURE: bool = Field(default=not DEBUG)` em `config/settings.py` e usar
-  `secure=settings.COOKIE_SECURE`; documentar que produção **deve** servir HTTPS.
+- **Correção**: exposto como `COOKIE_SECURE: Optional[bool]` em
+  `config/settings.py` (property `cookie_secure` deriva de `DEBUG` quando `None`);
+  `action.py` usa `secure=settings.cookie_secure`. Documentado no `.env.example`
+  que produção **deve** servir HTTPS (ou definir `COOKIE_SECURE=false`).
 - **Aceite**: cookie coerente com o esquema em uso; funciona em dev e em prod
   (atrás de TLS).
 
@@ -171,7 +173,7 @@ proposta.
 ## Ordem de execução sugerida (lotes)
 
 1. **Lote A — Autenticação/sessão** (itens 1, 6, 3, 5, 4): resolve o que quebra
-   funcionalidade hoje. O item 4 requer decisão (A ou B).
+   funcionalidade hoje. ✅ **Concluído** (item 4 decidido: cookie-first completo).
 2. **Lote B — CLI/DB** (item 2): pequeno e independente.
 3. **Lote C — Documentação** (itens 7, 8, 9).
 4. **Lote D — Higiene/CI** (itens 10, 11, 12).

@@ -56,6 +56,7 @@ Rode `python manage.py --help` para a lista real. Os comandos são registrados *
 - Tabelas: `@tanstack/react-table` renderizado pelo `DataTable` (`web/src/components/DataTable.tsx`), que usa `<Table>` do Mantine. Os templates gerados importam `@/components/DataTable`.
 - Formulários: `react-hook-form` + `@hookform/resolvers` + `zod`. Notificações: `notifications.show` de `@mantine/notifications`. Ícones: `lucide-react`.
 - Textos de UI em pt-BR; mensagens genéricas em `web/src/lib/i18n.ts` (`commonMessages`, `zodMessages`).
+- Autenticação é **cookie-first**: o backend emite `access_token` (JWT) e `refresh_token` (opaco) em cookies `HttpOnly` e o JS **nunca** lê token algum (não use `localStorage`). O estado do SPA é reconstruído pelo `AuthProvider` (`web/src/features/auth/action/AuthProvider.tsx`) via `GET /auth/action/profile`; em `401`, o interceptor do axios (`web/src/lib/api.ts`) renova com `/auth/action/refresh` **sem corpo** (o cookie carrega o refresh). Consuma via `useAuth()` (`web/src/lib/auth.ts`).
 
 ## Geração de código (`make:`)
 - Prefira gerar a escrever à mão. O `make:entity` cria backend (model, schema, repository, service, router, permission, test) e frontend (service, página List, types, schema zod, rotas). Flags: `--minimal`, `--only`/`--except` (subconjunto de componentes), `--no-frontend`, `--table-name`, `--no-prefix`.
