@@ -2,9 +2,20 @@
 
 Praetor follows a modular, domain-driven architecture designed for high scalability and clear separation of concerns.
 
+## Repository Layout
+
+```
+backend/     # FastAPI app — the import root (apps/, core/, config/, migrations/)
+frontend/    # React + Vite + Mantine SPA
+tools/       # Code generators (dev-only: commands + Jinja2 templates)
+docker/      # Dockerfiles and Compose definitions (base/develop/production)
+```
+
+`backend/` is self-contained: `uvicorn main:app` and `backend/manage.py` run from there, and the packages `apps`, `core` and `config` live inside it. The generators in `tools/` are **not** part of the production image (the backend build context is `backend/`), so `make:*`, `rm:*` and `generate:*` only exist when the repository is checked out.
+
 ## Modular Structure (Apps)
 
-The system is organized into "apps" located in the `apps/` directory. Each app represents a distinct domain (e.g., `auth`, `store`, `billing`).
+The system is organized into "apps" located in the `backend/apps/` directory. Each app represents a distinct domain (e.g., `auth`, `store`, `billing`).
 
 ### Anatomy of a Backend App
 - `models/`: Database schema (SQLAlchemy).
@@ -45,6 +56,6 @@ Translations are handled in a hybrid way:
 - `frontend/src/features/**/i18n.ts`: Domain-specific strings.
 
 ### Auto-Discovery System
-1. **Apps**: Any directory in `apps/` with an `app.py`.
+1. **Apps**: Any directory in `backend/apps/` with an `app.py`.
 2. **Routers**: Any `APIRouter` named `router` in `routers/*.py`.
 3. **Frontend Routes**: Any `routes.tsx` within the `features/` directory.

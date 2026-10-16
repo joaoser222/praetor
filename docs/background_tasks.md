@@ -21,7 +21,7 @@ The system is pre-configured to automatically discover tasks in your modular app
 
 ## Creating Tasks
 
-When you create a new app with `python manage.py make:app <name>`, a `tasks.py` file is generated automatically.
+When you create a new app with `python manage.py make:app <name>` (a partir de `backend/`), a `tasks.py` file is generated automatically inside `backend/apps/<name>/`.
 
 To define a task, use the `@celery_app.task` decorator:
 
@@ -37,9 +37,10 @@ def send_welcome_email(email: str):
 
 ## Running the Worker
 
-To start a worker that will listen for and execute tasks:
+To start a worker that will listen for and execute tasks (a partir de `backend/`):
 
 ```bash
+cd backend
 celery -A core.celery_app.celery_app worker --loglevel=info
 ```
 

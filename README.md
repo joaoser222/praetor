@@ -38,6 +38,10 @@ Praetor is built to accelerate development without sacrificing architectural int
 
 ## 🚀 Quick Start
 
+> **Onde rodar os comandos do backend:** a CLI vive em `backend/manage.py`, então os
+> comandos `manage.py` são executados a partir de `backend/` (`cd backend`). Da raiz
+> do repositório, o equivalente é `python backend/manage.py <comando>`.
+
 ### 1. Installation
 
 ```bash
@@ -48,17 +52,23 @@ cd praetor
 # Setup Backend
 python -m venv venv
 source venv/bin/activate
+cd backend
 pip install -e ".[dev]"
+cd ..
+
+# Central configuration (shared with Docker Compose)
 cp .env.example .env
 
 # Setup Frontend
 cd frontend
 npm install
+cd ..
 ```
 
 ### 2. Initialize Database
 
 ```bash
+cd backend
 python manage.py db:migrate
 python manage.py auth:createsuperuser
 python manage.py auth:makepermissions
@@ -67,7 +77,8 @@ python manage.py auth:makepermissions
 ### 3. Generate a Feature
 
 ```bash
-# Generate a new app and entity
+# Generate a new app and entity (from backend/)
+cd backend
 python manage.py make:app store
 python manage.py make:entity product --app store
 ```
@@ -91,16 +102,21 @@ docker compose -f docker-compose.prod.yml up --build -d
 
 ```
 praetor/
-├── apps/                # Backend Modular Apps (Domain-Driven)
-├── core/                # CLI, Base Classes, Templates, Celery
-├── config/              # Centralized configuration (FastAPI, Logging)
-├── frontend/                 # React Frontend
-│   ├── src/features/    # Frontend Modules (DDD)
+├── backend/             # FastAPI application (the import root)
+│   ├── apps/            # Modular apps (domain-driven)
+│   ├── core/            # Base classes, middlewares, Celery, runtime commands
+│   ├── config/          # Central configuration (settings, db, logging, security)
+│   ├── migrations/      # Alembic migrations
+│   ├── tests/           # Test suite
+│   └── manage.py        # The Heart of the DX (runtime commands)
+├── frontend/            # React + Vite + Mantine
+│   ├── src/features/    # Frontend modules (DDD)
 │   ├── src/components/  # Layout (AppShell) and DataTable (Mantine)
 │   └── src/lib/         # i18n, API client
-├── manage.py            # The Heart of the DX
+├── tools/               # Code generators (dev-only): commands + Jinja2 templates
 ├── docker-compose.yml       # Shortcut -> docker/compose/develop.yml
 ├── docker-compose.prod.yml  # Shortcut -> docker/compose/production.yml
+├── docs/                    # Narrative documentation
 └── docker/                  # Everything container-related
     ├── Dockerfile*          # Backend/frontend images (dev & prod)
     └── compose/

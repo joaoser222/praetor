@@ -45,6 +45,7 @@ async def list_users():
 Whenever you add or modify permissions in your code, sync them with the database:
 
 ```bash
+cd backend
 python manage.py auth:makepermissions
 ```
 

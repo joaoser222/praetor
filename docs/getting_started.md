@@ -2,6 +2,10 @@
 
 Get your Praetor project up and running in minutes.
 
+> **Onde rodar os comandos:** a CLI do backend vive em `backend/manage.py`, então os
+> comandos abaixo partem de `backend/` (`cd backend`). Da raiz do repositório, o
+> equivalente é `python backend/manage.py <comando>` — nenhum caminho depende do CWD.
+
 ## 1. Environment Setup
 
 ```bash
@@ -9,18 +13,22 @@ Get your Praetor project up and running in minutes.
 git clone <repo_url>
 cd praetor
 
-# Setup Python environment
+# Setup Python environment (a partir de backend/)
 python -m venv venv
 source venv/bin/activate
+cd backend
 pip install -e ".[dev]"
+cd ..
 
-# Initial configuration
+# Initial configuration (na raiz, compartilhada com o Docker Compose)
 cp .env.example .env
 ```
 
 ## 2. Initialize Database & Security
 
 ```bash
+cd backend
+
 # Apply migrations (o projeto já inclui a migração inicial do schema)
 python manage.py db:migrate
 
@@ -38,6 +46,8 @@ python manage.py auth:makepermissions
 
 ### Step 1: Generate a Feature
 ```bash
+cd backend
+
 # Create an app (domain)
 python manage.py make:app store
 
@@ -45,8 +55,13 @@ python manage.py make:app store
 python manage.py make:entity product --app store
 ```
 
+Os geradores (`make:*`, `rm:*`, `generate:*`) vivem em `tools/` e **não** fazem
+parte da imagem de produção: eles só existem quando a pasta `tools/` está presente
+(comando rodando do repositório, não de dentro da imagem do backend).
+
 ### Step 2: Run the APIs
 ```bash
+cd backend
 python manage.py run:server
 ```
 
