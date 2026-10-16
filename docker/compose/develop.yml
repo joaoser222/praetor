@@ -40,9 +40,9 @@ services:
     ports:
       - "6379:6379"
 
-  web:
+  frontend:
     volumes:
-      - ../../web:/app
+      - ../../frontend:/app
       # Volume anônimo preserva o node_modules instalado na imagem.
       - /app/node_modules
     ports:

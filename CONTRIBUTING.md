@@ -100,7 +100,7 @@ The workflow `.github/workflows/ci.yml` must pass. It has three jobs:
 | Job        | What it runs                                                        |
 | ---------- | ------------------------------------------------------------------- |
 | `backend`  | `ruff check .` and `pytest` (Python 3.12, with Redis)               |
-| `frontend` | `npm ci`, `npm run lint`, `npm run build` in `web/`                 |
+| `frontend` | `npm ci`, `npm run lint`, `npm run build` in `frontend/`                 |
 | `codegen`  | `make:app sample` + `make:entity product`, then `npm run build`     |
 
 ---

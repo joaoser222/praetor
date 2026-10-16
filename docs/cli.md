@@ -26,7 +26,7 @@ The `make` commands ensure architectural consistency by generating boilerplate f
 ```bash
 python manage.py make:app <app_name>
 ```
-Created the modular app structure in the backend and a corresponding domain folder in `web/src/features/`.
+Created the modular app structure in the backend and a corresponding domain folder in `frontend/src/features/`.
 
 ### Creating an Entity
 ```bash
@@ -38,11 +38,11 @@ Generates a complete vertical slice of the feature:
     - `repositories/{entity}.py`, `services/{entity}.py`
     - `routers/{entity}.py`, `permissions/{entity}.py`, `tests/test_{entity}.py`
 - **Frontend**:
-    - `web/src/features/{app}/{entity}/service.ts` (API Client)
-    - `web/src/features/{app}/{entity}/pages/List.tsx` (**DataTable** view)
-    - `web/src/features/{app}/{entity}/routes.tsx` (Auto-discovered routes)
-    - `web/src/features/{app}/{entity}/schema.ts` (Zod validations)
-    - `web/src/features/{app}/{entity}/types.ts` (TS interfaces)
+    - `frontend/src/features/{app}/{entity}/service.ts` (API Client)
+    - `frontend/src/features/{app}/{entity}/pages/List.tsx` (**DataTable** view)
+    - `frontend/src/features/{app}/{entity}/routes.tsx` (Auto-discovered routes)
+    - `frontend/src/features/{app}/{entity}/schema.ts` (Zod validations)
+    - `frontend/src/features/{app}/{entity}/types.ts` (TS interfaces)
 
 Use `--no-frontend` to skip frontend code generation.
 

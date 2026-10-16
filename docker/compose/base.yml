@@ -3,7 +3,7 @@
 # =============================================================================
 #
 # Este arquivo NÃO representa um ambiente: ele define os componentes
-# reutilizáveis (backend: `api` e `worker`; frontend: `web`; infra: `redis`).
+# reutilizáveis (backend: `api` e `worker`; frontend: `frontend`; infra: `redis`).
 # Os ambientes o importam via `include:` e sobrescrevem apenas o que difere:
 #
 #   docker/compose/develop.yml      -> ambiente develop
@@ -80,11 +80,11 @@ services:
         condition: service_started
 
   # -------------------------------- frontend ---------------------------------
-  web:
-    image: ${PROJECT_NAME:-praetor}-web
+  frontend:
+    image: ${PROJECT_NAME:-praetor}-frontend
     build:
-      context: ../../web
-      dockerfile: ../docker/Dockerfile.web
+      context: ../../frontend
+      dockerfile: ../docker/Dockerfile.frontend
     environment: *frontend-env
     depends_on:
       api:

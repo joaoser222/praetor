@@ -5,8 +5,8 @@
 # Estágio 1: compila o bundle com Vite (o VITE_API_URL é embutido no build).
 # Estágio 2: serve os arquivos estáticos com nginx (SPA) e faz proxy de /api.
 #
-# O contexto de build é a pasta ./web:
-#   docker build -f Dockerfile.web.prod -t praetor-web:prod --build-arg VITE_API_URL=/api web
+# O contexto de build é a pasta ./frontend:
+#   docker build -f Dockerfile.frontend.prod -t praetor-frontend:prod --build-arg VITE_API_URL=/api frontend
 
 # ------------------------------------------------------------------ build ----
 FROM node:22-slim AS build

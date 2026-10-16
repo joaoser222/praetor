@@ -70,7 +70,7 @@ markers = [
 
 [tool.ruff]
 line-length = 100
-exclude = ["migrations/versions", "web", "venv"]
+exclude = ["migrations/versions", "frontend", "venv"]
 
 [tool.ruff.lint]
 # Apenas regras que apontam defeitos reais (imports quebrados, nomes indefinidos).

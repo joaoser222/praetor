@@ -18,7 +18,7 @@
 # expostos para fora da rede interna).
 #
 # Identidade: o nome do projeto recebe o sufixo "-prod" (ex.: praetor-prod) e as
-# imagens viram <PROJECT_NAME>-api:prod / <PROJECT_NAME>-web:prod.
+# imagens viram <PROJECT_NAME>-api:prod / <PROJECT_NAME>-frontend:prod.
 #
 # CORS: usa o valor do .env central (que já inclui as origens do nginx, 8080).
 # Para restringir em produção, ajuste CORS_ORIGINS no .env.
@@ -98,10 +98,10 @@ services:
       redis:
         condition: service_healthy
 
-  web:
-    image: ${PROJECT_NAME:-praetor}-web:prod
+  frontend:
+    image: ${PROJECT_NAME:-praetor}-frontend:prod
     build:
-      dockerfile: ../docker/Dockerfile.web.prod
+      dockerfile: ../docker/Dockerfile.frontend.prod
       args:
         # Mesma origem: o nginx faz proxy de /api para o serviço "api".
         VITE_API_URL: /api

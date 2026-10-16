@@ -52,7 +52,7 @@ pip install -e ".[dev]"
 cp .env.example .env
 
 # Setup Frontend
-cd web
+cd frontend
 npm install
 ```
 
@@ -94,7 +94,7 @@ praetor/
 ├── apps/                # Backend Modular Apps (Domain-Driven)
 ├── core/                # CLI, Base Classes, Templates, Celery
 ├── config/              # Centralized configuration (FastAPI, Logging)
-├── web/                 # React Frontend
+├── frontend/                 # React Frontend
 │   ├── src/features/    # Frontend Modules (DDD)
 │   ├── src/components/  # Layout (AppShell) and DataTable (Mantine)
 │   └── src/lib/         # i18n, API client

@@ -24,9 +24,9 @@ def make_app(name: str, no_frontend: bool):
     class_name = to_pascal_case(name)
 
     # Diretório da feature no frontend
-    web_dir = os.path.join(settings.BASE_DIR, "web")
-    if os.path.exists(web_dir) and not no_frontend:
-        feature_dir = os.path.join(web_dir, "src", "features", name)
+    frontend_dir = os.path.join(settings.BASE_DIR, "frontend")
+    if os.path.exists(frontend_dir) and not no_frontend:
+        feature_dir = os.path.join(frontend_dir, "src", "features", name)
         os.makedirs(feature_dir, exist_ok=True)
         # Cria um arquivo index simples ou placeholder, se necessário
         click.secho(f"Frontend feature '{name}' created in {feature_dir}", fg="cyan")
@@ -135,9 +135,9 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
     }
 
     # Arquivos de frontend (apenas se o diretório web existir)
-    web_dir = os.path.join(settings.BASE_DIR, "web")
-    if os.path.exists(web_dir) and not no_frontend:
-        feature_path = os.path.join(web_dir, "src", "features", app, name)
+    frontend_dir = os.path.join(settings.BASE_DIR, "frontend")
+    if os.path.exists(frontend_dir) and not no_frontend:
+        feature_path = os.path.join(frontend_dir, "src", "features", app, name)
         all_template_files.update({
             "fe_service": ("frontend/service.ts.j2", os.path.join(feature_path, "service.ts"), None, None),
             "fe_list": ("frontend/list.tsx.j2", os.path.join(feature_path, "pages", "List.tsx"), None, None),

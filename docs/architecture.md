@@ -17,9 +17,9 @@ The system is organized into "apps" located in the `apps/` directory. Each app r
 
 ## Frontend Architecture
 
-The frontend follows a **Domain-Driven Design (DDD)** approach located in `web/src/features/`.
+The frontend follows a **Domain-Driven Design (DDD)** approach located in `frontend/src/features/`.
 
-### Feature Structure (`web/src/features/{app_name}/{entity_name}/`)
+### Feature Structure (`frontend/src/features/{app_name}/{entity_name}/`)
 Each entity is a self-contained module with its own:
 - `pages/`: React views (e.g., `List.tsx` using **DataTable**).
 - `routes.tsx`: Local route configuration for the entity.
@@ -28,8 +28,8 @@ Each entity is a self-contained module with its own:
 - `types.ts`: TypeScript interfaces mirroring backend schemas.
 
 ### Component Organization
-- UI: **Mantine v9** components (`@mantine/core`, `@mantine/hooks`), configured via `MantineProvider` in `web/src/main.tsx`.
-- `web/src/components/`: `DataTable` (**TanStack Table** rendered with Mantine's `Table`) and layout components (`Sidebar`, `Header`; `AppShell` in `App.tsx`).
+- UI: **Mantine v9** components (`@mantine/core`, `@mantine/hooks`), configured via `MantineProvider` in `frontend/src/main.tsx`.
+- `frontend/src/components/`: `DataTable` (**TanStack Table** rendered with Mantine's `Table`) and layout components (`Sidebar`, `Header`; `AppShell` in `App.tsx`).
 
 ### Automatic Route Discovery
 The frontend uses Vite's `import.meta.glob` to automatically scan all `features/**/routes.tsx` files. Adding a new feature automatically integrates its routes into the main application and Sidebar without manual registration.
@@ -41,8 +41,8 @@ Isolates data access through a `BaseRepository`, making the core logic database-
 
 ### Internationalization (i18n)
 Translations are handled in a hybrid way:
-- `web/src/lib/i18n.ts`: Generic UI strings (Loading, Save, Cancel, etc.) and global Zod messages.
-- `web/src/features/**/i18n.ts`: Domain-specific strings.
+- `frontend/src/lib/i18n.ts`: Generic UI strings (Loading, Save, Cancel, etc.) and global Zod messages.
+- `frontend/src/features/**/i18n.ts`: Domain-specific strings.
 
 ### Auto-Discovery System
 1. **Apps**: Any directory in `apps/` with an `app.py`.

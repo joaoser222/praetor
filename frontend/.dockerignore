@@ -1,4 +1,4 @@
-# Contexto de build do FRONTEND (pasta ./web).
+# Contexto de build do FRONTEND (pasta ./frontend).
 
 node_modules
 dist

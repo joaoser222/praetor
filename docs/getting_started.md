@@ -55,7 +55,7 @@ python manage.py run:server
 Praetor comes with a professional **React + Vite + Mantine** frontend.
 
 ```bash
-cd web
+cd frontend
 npm install
 npm run dev
 ```

@@ -31,8 +31,8 @@ def rm_app(name: str, force: bool):
         shutil.rmtree(app_dir)
         
         # Remove o diretório da feature no frontend, se existir
-        web_dir = os.path.join(settings.BASE_DIR, "web")
-        feature_dir = os.path.join(web_dir, "src", "features", name)
+        frontend_dir = os.path.join(settings.BASE_DIR, "frontend")
+        feature_dir = os.path.join(frontend_dir, "src", "features", name)
         if os.path.exists(feature_dir):
             shutil.rmtree(feature_dir)
             click.secho(f"✓ Frontend feature '{name}' removed successfully.", fg="green")
@@ -70,14 +70,14 @@ def rm_entity(name: str, app: str, only: str, except_: str, force: bool):
         "router": (f"routers/{name}.py", None),
         "permission": (f"permissions/{name}.py", None),
         "test": (f"tests/test_{name}.py", None),
-        "fe_service": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "service.ts"), "frontend"),
-        "fe_list": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "pages/List.tsx"), "frontend"),
-        "fe_create": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "pages/Create.tsx"), "frontend"),
-        "fe_update": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "pages/Update.tsx"), "frontend"),
-        "fe_form": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "components/Form.tsx"), "frontend"),
-        "fe_routes": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "routes.tsx"), "frontend"),
-        "fe_types": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "types.ts"), "frontend"),
-        "fe_schema": (os.path.join(settings.BASE_DIR, "web/src/features", app, name, "schema.ts"), "frontend"),
+        "fe_service": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "service.ts"), "frontend"),
+        "fe_list": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "pages/List.tsx"), "frontend"),
+        "fe_create": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "pages/Create.tsx"), "frontend"),
+        "fe_update": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "pages/Update.tsx"), "frontend"),
+        "fe_form": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "components/Form.tsx"), "frontend"),
+        "fe_routes": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "routes.tsx"), "frontend"),
+        "fe_types": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "types.ts"), "frontend"),
+        "fe_schema": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "schema.ts"), "frontend"),
     }
 
 
