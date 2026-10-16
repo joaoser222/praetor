@@ -1,8 +1,9 @@
-from core.celery_app import celery_app
-from config.logging import logger
-
 # Tasks do Celery para o app '{{name}}'.
-
+#
+# Ao criar a primeira task, importe o app do Celery e o logger:
+#   from core.celery_app import celery_app
+#   from config.logging import logger
+#
 # Para criar uma nova task, defina uma função e decore-a com @celery_app.task.
 # Você pode então chamar esta task assincronamente a partir do código da sua aplicação
 # usando `my_task.delay(arg1, arg2)`.

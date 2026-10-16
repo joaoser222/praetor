@@ -86,7 +86,7 @@ jobs:
     - name: Install backend dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install .
+        pip install -e ".[dev]"
 
     - name: Create .env file
       run: cp .env.example .env
@@ -95,6 +95,12 @@ jobs:
       run: |
         python manage.py make:app sample
         python manage.py make:entity product --app sample
+
+    - name: Lint generated backend
+      run: ruff check apps/sample
+
+    - name: Test generated backend
+      run: pytest apps/sample/tests
 
     - name: Set up Node
       uses: actions/setup-node@v4
