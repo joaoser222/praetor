@@ -1,14 +1,25 @@
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as package_version
 from typing import List, Optional
 from pathlib import Path
 from pydantic import AnyHttpUrl, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _default_app_version() -> str:
+    """Versão da aplicação — fonte única em `pyproject.toml` (fallback sem install)."""
+    try:
+        return package_version("praetor")
+    except PackageNotFoundError:
+        return "0.1.0"
+
 
 class Settings(BaseSettings):
     # Diretório raiz do projeto
     BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
     APP_NAME: str = "Praetor"
-    APP_VERSION: str = "0.1.0"
+    APP_VERSION: str = _default_app_version()
     DEBUG: bool = False
 
     SERVER_HOST: str = "127.0.0.1"

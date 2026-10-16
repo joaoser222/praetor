@@ -15,6 +15,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "praetor"
+# Fonte única da versão da aplicação: `config.settings.APP_VERSION` deriva daqui
+# (importlib.metadata). Mantenha apenas este valor.
 version = "0.1.0"
 description = "Boilerplate full-stack: FastAPI (apps modulares) + React 19/Vite, orquestrado pela CLI manage.py."
 requires-python = ">=3.12"
