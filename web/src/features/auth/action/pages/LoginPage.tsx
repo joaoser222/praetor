@@ -16,19 +16,20 @@ import {
     ThemeIcon,
     Title,
 } from '@mantine/core';
-import { authService } from '@/features/auth/action/service';
 import { loginSchema, type LoginFormValues } from '@/features/auth/action/schema';
 import { authMessages } from '@/features/auth/i18n';
+import { useAuth } from '@/lib/auth';
 
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
     });
 
     const onSubmit = async (data: LoginFormValues) => {
         try {
-            await authService.login(data);
+            await login(data);
             notifications.show({ message: authMessages.loginSuccess, color: 'green' });
             navigate('/');
         } catch (error: unknown) {

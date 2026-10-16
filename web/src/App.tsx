@@ -1,11 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AppShell } from '@mantine/core';
+import { AppShell, Center, Loader } from '@mantine/core';
 import LoginPage from '@/features/auth/action/pages/LoginPage';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import type { RouteConfig } from '@/lib/routes';
-import { clearSession, isAuthenticated } from '@/lib/auth';
+import { useAuth } from '@/lib/auth';
+import { AuthProvider } from '@/features/auth/action/AuthProvider';
 
 // ----------------------------------------------------------------------
 // Descoberta dinâmica de rotas
@@ -26,51 +27,72 @@ const allRoutes: RouteConfig[] = Object.values(featureModules).flatMap((module) 
 // Proteção de autenticação
 // ----------------------------------------------------------------------
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  return isAuthenticated() ? <>{children}</> : <Navigate to="/login" />;
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Enquanto a sessão é reconstruída a partir do cookie, não decidimos ainda.
+  if (isLoading) {
+    return (
+      <Center mih="100vh">
+        <Loader />
+      </Center>
+    );
+  }
+
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
-function App() {
-  const handleLogout = () => {
-    clearSession();
+function AppRoutes() {
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
     window.location.href = '/login';
   };
 
   return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+
+      <Route path="/panel/*" element={
+        <PrivateRoute>
+          <AppShell
+            header={{ height: 64 }}
+            navbar={{ width: 260, breakpoint: 'sm' }}
+            padding="md"
+          >
+            <AppShell.Header>
+              <Header />
+            </AppShell.Header>
+
+            <AppShell.Navbar p="xs">
+              <Sidebar routes={allRoutes} onLogout={handleLogout} />
+            </AppShell.Navbar>
+
+            <AppShell.Main>
+              <Routes>
+                {allRoutes.map((route) => {
+                  const relativePath = route.path === '/panel' ? '' : route.path.replace('/panel/', '');
+                  return <Route key={route.path} path={relativePath} element={route.element} />;
+                })}
+                <Route path="*" element={<Navigate to="/panel" replace />} />
+              </Routes>
+            </AppShell.Main>
+          </AppShell>
+        </PrivateRoute>
+      } />
+
+      <Route path="/" element={<Navigate to="/panel" replace />} />
+      <Route path="*" element={<Navigate to="/panel" replace />} />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
     <Router>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-
-        <Route path="/panel/*" element={
-          <PrivateRoute>
-            <AppShell
-              header={{ height: 64 }}
-              navbar={{ width: 260, breakpoint: 'sm' }}
-              padding="md"
-            >
-              <AppShell.Header>
-                <Header />
-              </AppShell.Header>
-
-              <AppShell.Navbar p="xs">
-                <Sidebar routes={allRoutes} onLogout={handleLogout} />
-              </AppShell.Navbar>
-
-              <AppShell.Main>
-                <Routes>
-                  {allRoutes.map((route) => {
-                    const relativePath = route.path === '/panel' ? '' : route.path.replace('/panel/', '');
-                    return <Route key={route.path} path={relativePath} element={route.element} />;
-                  })}
-                  <Route path="*" element={<Navigate to="/panel" replace />} />
-                </Routes>
-              </AppShell.Main>
-            </AppShell>
-          </PrivateRoute>
-        } />
-
-        <Route path="/" element={<Navigate to="/panel" replace />} />
-        <Route path="*" element={<Navigate to="/panel" replace />} />
-      </Routes>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </Router>
   );
 }
