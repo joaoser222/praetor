@@ -8,8 +8,14 @@ Settings are managed in your `.env` file:
 
 ```dotenv
 CELERY_BROKER_URL="redis://localhost:6379/0"
-CELERY_RESULT_BACKEND="db+sqlite:///celery_results.db"
+CELERY_RESULT_BACKEND="redis://localhost:6379/1"
 ```
+
+> O projeto usa **Redis** como broker e result backend (a dependência instalada é
+> `celery[redis]`), em linha com o `.env.example` e o `docker/compose/base.yml`.
+> Guardar os resultados no banco (`CELERY_RESULT_BACKEND="db+sqlite:///celery_results.db"`
+> ou `db+postgresql://...`) é uma alternativa válida, mas exige o extra
+> `celery[sqlalchemy]` e um driver síncrono.
 
 The system is pre-configured to automatically discover tasks in your modular apps.
 

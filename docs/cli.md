@@ -36,7 +36,7 @@ Generates a complete vertical slice of the feature:
 - **Backend**:
     - `models/{entity}.py`, `schemas/{entity}.py`
     - `repositories/{entity}.py`, `services/{entity}.py`
-    - `routers/{entity}.py`, `permissions/{entity}.py`, `tests/{entity}.py`
+    - `routers/{entity}.py`, `permissions/{entity}.py`, `tests/test_{entity}.py`
 - **Frontend**:
     - `web/src/features/{app}/{entity}/service.ts` (API Client)
     - `web/src/features/{app}/{entity}/pages/List.tsx` (**DataTable** view)

@@ -134,8 +134,8 @@ The workflow `.github/workflows/ci.yml` must pass. It has three jobs:
 
 ## Bootstrap (first-time setup)
 
-This repository currently ships with `master` only. Create the long-lived
-`develop` branch once:
+The long-lived `develop` branch already exists (locally and on the remote). When
+bootstrapping a fresh fork, create it once from `master`:
 
 ```bash
 git branch develop master
