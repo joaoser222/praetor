@@ -20,6 +20,10 @@ venv/
 .ruff_cache/
 .mypy_cache/
 
+# Artefatos de build local (pip install / pip install -e)
+build/
+*.egg-info/
+
 # Bancos locais e dados
 *.db
 data/
