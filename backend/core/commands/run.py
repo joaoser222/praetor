@@ -1,7 +1,6 @@
 import click
 import uvicorn
 import subprocess
-import os
 from config.settings import settings
 
 @click.group('run')
@@ -34,5 +33,10 @@ def run_test(app_name: str | None):
     # para executar os demais comandos do CLI (ex.: make:*, db:*).
     import pytest
 
-    test_path = f"apps/{app_name}/tests" if app_name and os.path.exists(f"apps/{app_name}/tests") else "tests/"
+    tests_dir = settings.BASE_DIR / "tests"
+    if app_name:
+        app_tests = settings.BASE_DIR / "apps" / app_name / "tests"
+        test_path = str(app_tests if app_tests.exists() else tests_dir)
+    else:
+        test_path = str(tests_dir)
     pytest.main(["-v", test_path])

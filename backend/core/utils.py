@@ -1,4 +1,5 @@
-from typing import NamedTuple
+from pathlib import Path
+from typing import NamedTuple, Optional
 import click
 import importlib
 from types import ModuleType
@@ -75,11 +76,16 @@ def auto_discover_routers(app: FastAPI, base_prefix: str = "/api"):
             )
             logger.info(f"Routes for app '{app_config.name}' loaded.")
 
-def auto_discover_commands(cli, base_dir: str):
+def auto_discover_commands(cli, base_dir: str, root: Optional[Path] = None):
     """
     Descobre e registra automaticamente todos os comandos de CLI do diretório informado.
+
+    Args:
+        cli: Grupo Click que receberá os comandos descobertos.
+        base_dir: Pacote (em notação de pontos) onde os comandos serão procurados.
+        root: Raiz usada para resolver `base_dir`. Padrão: `settings.BASE_DIR`.
     """
-    commands_path = settings.BASE_DIR / base_dir.replace(".", "/")
+    commands_path = (root or settings.BASE_DIR) / base_dir.replace(".", "/")
 
     def process_command_module(module: ModuleType, module_stem: str):
         # Procura por objetos do Click (Command ou Group)

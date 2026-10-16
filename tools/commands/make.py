@@ -2,12 +2,12 @@ import click
 import os
 from jinja2 import Environment, FileSystemLoader
 from core.utils import create_from_template,to_pascal_case,to_plural
-from config.settings import settings
+from tools.paths import BACKEND_DIR, FRONTEND_DIR, PROJECT_ROOT, TEMPLATES_DIR
+
 
 def _load_template_env():
     # Configura o ambiente Jinja2
-    template_path = os.path.join(settings.BASE_DIR, "core", "templates")
-    return Environment(loader=FileSystemLoader(template_path))
+    return Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
 
 @click.group('make')
 def make_cli():
@@ -19,12 +19,12 @@ def make_cli():
 @click.option("--no-frontend" , is_flag=True, help="Disable frontend feature generation")
 def make_app(name: str, no_frontend: bool):
     """Cria um novo app com uma estrutura padrão."""
-    app_dir = os.path.join(settings.BASE_DIR, "apps", name)
+    app_dir = str(BACKEND_DIR / "apps" / name)
     env = _load_template_env()
     class_name = to_pascal_case(name)
 
     # Diretório da feature no frontend
-    frontend_dir = os.path.join(settings.BASE_DIR, "frontend")
+    frontend_dir = str(FRONTEND_DIR)
     if os.path.exists(frontend_dir) and not no_frontend:
         feature_dir = os.path.join(frontend_dir, "src", "features", name)
         os.makedirs(feature_dir, exist_ok=True)
@@ -77,7 +77,7 @@ def make_app(name: str, no_frontend: bool):
 def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, custom_table_name: str, no_prefix: bool, no_frontend: bool):
 
     """Cria uma nova entidade (model, schema, repo, service) dentro de um app."""
-    app_dir = os.path.join(settings.BASE_DIR, "apps", app)
+    app_dir = str(BACKEND_DIR / "apps" / app)
     env = _load_template_env()
 
     if not os.path.exists(app_dir):
@@ -135,7 +135,7 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
     }
 
     # Arquivos de frontend (apenas se o diretório web existir)
-    frontend_dir = os.path.join(settings.BASE_DIR, "frontend")
+    frontend_dir = str(FRONTEND_DIR)
     if os.path.exists(frontend_dir) and not no_frontend:
         feature_path = os.path.join(frontend_dir, "src", "features", app, name)
         all_template_files.update({
@@ -205,7 +205,7 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
             target_path = target_file
             # Garante que o subdiretório exista para o frontend
             os.makedirs(os.path.dirname(target_path), exist_ok=True)
-            display_path = os.path.relpath(target_path, settings.BASE_DIR)
+            display_path = os.path.relpath(target_path, PROJECT_ROOT)
         else:
             target_path = os.path.join(app_dir, target_file)
             display_path = os.path.join(f"apps/{app}", target_file)
@@ -247,7 +247,7 @@ def make_entity(name: str, app: str, only: str, except_: str, minimal: bool, cus
 @click.argument("name")
 def make_command(name: str):
     """Cria um novo arquivo de comando personalizado no diretório commands/ da raiz."""
-    command_root = os.path.join(settings.BASE_DIR, "commands")
+    command_root = os.path.join(BACKEND_DIR, "commands")
     command_path = os.path.join(command_root, f"{name}.py")
     env = _load_template_env()
 
@@ -269,7 +269,7 @@ def make_command(name: str):
 def make_middleware(name: str):
     """Cria um novo arquivo de middleware no diretório middlewares/ da raiz."""
     
-    middleware_root = os.path.join(settings.BASE_DIR, "middlewares")
+    middleware_root = os.path.join(BACKEND_DIR, "middlewares")
     middleware_path = os.path.join(middleware_root, f"{name}.py")
     env = _load_template_env()
     pascal_name = to_pascal_case(name)

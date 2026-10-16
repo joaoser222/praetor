@@ -1,7 +1,7 @@
 import click
 import os
 import shutil
-from config.settings import settings
+from tools.paths import BACKEND_DIR, FRONTEND_DIR, PROJECT_ROOT
 
 @click.group('rm')
 def rm_cli():
@@ -13,7 +13,7 @@ def rm_cli():
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 def rm_app(name: str, force: bool):
     """Remove um app e todo o seu conteúdo."""
-    app_dir = os.path.join(settings.BASE_DIR, "apps", name)
+    app_dir = str(BACKEND_DIR / "apps" / name)
     
     if not os.path.exists(app_dir):
         click.secho(f"App '{name}' not found.", fg="yellow")
@@ -31,7 +31,7 @@ def rm_app(name: str, force: bool):
         shutil.rmtree(app_dir)
         
         # Remove o diretório da feature no frontend, se existir
-        frontend_dir = os.path.join(settings.BASE_DIR, "frontend")
+        frontend_dir = str(FRONTEND_DIR)
         feature_dir = os.path.join(frontend_dir, "src", "features", name)
         if os.path.exists(feature_dir):
             shutil.rmtree(feature_dir)
@@ -50,7 +50,7 @@ def rm_app(name: str, force: bool):
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 def rm_entity(name: str, app: str, only: str, except_: str, force: bool):
     """Remove uma entidade e seus componentes de um app."""
-    app_dir = os.path.join(settings.BASE_DIR, "apps", app)
+    app_dir = str(BACKEND_DIR / "apps" / app)
     
     if not os.path.exists(app_dir):
         click.secho(f"App '{app}' not found.", fg="red")
@@ -70,14 +70,14 @@ def rm_entity(name: str, app: str, only: str, except_: str, force: bool):
         "router": (f"routers/{name}.py", None),
         "permission": (f"permissions/{name}.py", None),
         "test": (f"tests/test_{name}.py", None),
-        "fe_service": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "service.ts"), "frontend"),
-        "fe_list": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "pages/List.tsx"), "frontend"),
-        "fe_create": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "pages/Create.tsx"), "frontend"),
-        "fe_update": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "pages/Update.tsx"), "frontend"),
-        "fe_form": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "components/Form.tsx"), "frontend"),
-        "fe_routes": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "routes.tsx"), "frontend"),
-        "fe_types": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "types.ts"), "frontend"),
-        "fe_schema": (os.path.join(settings.BASE_DIR, "frontend/src/features", app, name, "schema.ts"), "frontend"),
+        "fe_service": (os.path.join(str(FRONTEND_DIR), "src/features", app, name, "service.ts"), "frontend"),
+        "fe_list": (os.path.join(str(FRONTEND_DIR), "src/features", app, name, "pages/List.tsx"), "frontend"),
+        "fe_create": (os.path.join(str(FRONTEND_DIR), "src/features", app, name, "pages/Create.tsx"), "frontend"),
+        "fe_update": (os.path.join(str(FRONTEND_DIR), "src/features", app, name, "pages/Update.tsx"), "frontend"),
+        "fe_form": (os.path.join(str(FRONTEND_DIR), "src/features", app, name, "components/Form.tsx"), "frontend"),
+        "fe_routes": (os.path.join(str(FRONTEND_DIR), "src/features", app, name, "routes.tsx"), "frontend"),
+        "fe_types": (os.path.join(str(FRONTEND_DIR), "src/features", app, name, "types.ts"), "frontend"),
+        "fe_schema": (os.path.join(str(FRONTEND_DIR), "src/features", app, name, "schema.ts"), "frontend"),
     }
 
 
@@ -145,7 +145,7 @@ def rm_entity(name: str, app: str, only: str, except_: str, force: bool):
                 parent_dir = os.path.dirname(full_path)
                 if os.path.exists(parent_dir) and not os.listdir(parent_dir):
                     os.rmdir(parent_dir)
-                    click.secho(f"  Empty frontend directory removed: {os.path.relpath(parent_dir, settings.BASE_DIR)}", fg="cyan")
+                    click.secho(f"  Empty frontend directory removed: {os.path.relpath(parent_dir, PROJECT_ROOT)}", fg="cyan")
 
             
             # Atualiza o __init__.py, se aplicável
@@ -189,7 +189,7 @@ def rm_entity(name: str, app: str, only: str, except_: str, force: bool):
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 def rm_command(name: str, force: bool):
     """Remove um arquivo de comando personalizado do diretório commands/."""
-    command_path = os.path.join(settings.BASE_DIR, "commands", f"{name}.py")
+    command_path = os.path.join(BACKEND_DIR, "commands", f"{name}.py")
     
     if not os.path.exists(command_path):
         click.secho(f"Command 'commands/{name}.py' not found.", fg="yellow")
@@ -212,7 +212,7 @@ def rm_command(name: str, force: bool):
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 def rm_middleware(name: str, force: bool):
     """Remove um arquivo de middleware do diretório middlewares/."""
-    middleware_path = os.path.join(settings.BASE_DIR, "middlewares", f"{name}.py")
+    middleware_path = os.path.join(BACKEND_DIR, "middlewares", f"{name}.py")
     
     if not os.path.exists(middleware_path):
         click.secho(f"Middleware 'middlewares/{name}.py' not found.", fg="yellow")

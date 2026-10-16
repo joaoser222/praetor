@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import AsyncGenerator
 
 import pytest_asyncio
@@ -11,8 +12,9 @@ from core.base_model import BaseModel
 # consequentemente, a importação dos models (populando BaseModel.metadata).
 from main import app
 
-# Banco de dados SQLite em arquivo dedicado aos testes.
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+# Banco de dados SQLite em arquivo dedicado aos testes. Caminho absoluto para não
+# depender do diretório de trabalho.
+TEST_DATABASE_URL = f"sqlite+aiosqlite:///{Path(__file__).resolve().parent / 'test.db'}"
 
 engine = create_async_engine(TEST_DATABASE_URL, echo=False)
 TestingSessionLocal = async_sessionmaker(

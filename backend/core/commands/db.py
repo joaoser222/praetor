@@ -8,7 +8,7 @@ from config.database import engine
 from core.base_model import BaseModel
 from config.settings import settings
 
-alembic_cfg = Config("alembic.ini")
+alembic_cfg = Config(str(settings.BASE_DIR / "alembic.ini"))
 alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 VERSIONS_DIR = Path(settings.BASE_DIR) / "migrations" / "versions"

@@ -1,6 +1,5 @@
 import asyncio
 import click
-from pathlib import Path
 from sqlalchemy import select
 
 from apps.auth.schemas.user import UserCreate
@@ -8,6 +7,7 @@ from apps.auth.services.user import UserService
 from apps.auth.models import Permission
 from core.utils import PermissionDef
 from config.database import AsyncSessionFactory
+from config.settings import settings
 
 async def _check_user_exists(email: str) -> bool:
     async with AsyncSessionFactory() as session:
@@ -53,7 +53,7 @@ def _discover_permissions() -> list[PermissionDef]:
     """Descobre todas as permissões definidas nos apps."""
     all_permissions = []
     base_dir = "apps"
-    apps_path = Path(base_dir)
+    apps_path = settings.BASE_DIR / base_dir
     
     for app_dir in apps_path.iterdir():
         if app_dir.is_dir():

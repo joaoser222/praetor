@@ -4,8 +4,11 @@ import sys
 from logging.config import fileConfig
 from dotenv import load_dotenv
 
-# Adiciona o diretório raiz do projeto ao Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# `migrations/env.py` vive em `backend/migrations/`: sobe para o backend (raiz de
+# importação da aplicação) e, daí, para a raiz do repositório (onde fica o .env).
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_PROJECT_ROOT = os.path.dirname(_BACKEND_DIR)
+sys.path.insert(0, _BACKEND_DIR)
 
 
 from sqlalchemy import pool
@@ -14,8 +17,8 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 
-# Carrega as variáveis de ambiente do .env
-load_dotenv()
+# Carrega as variáveis de ambiente do .env central (raiz do repositório).
+load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Configuração do Alembic

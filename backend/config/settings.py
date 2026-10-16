@@ -5,6 +5,10 @@ from pathlib import Path
 from pydantic import AnyHttpUrl, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# `config/` vive sob `backend/`; a raiz do repositório fica um nível acima.
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+_PROJECT_ROOT = _BACKEND_DIR.parent
+
 
 def _default_app_version() -> str:
     """Versão da aplicação — fonte única em `pyproject.toml` (fallback sem install)."""
@@ -15,8 +19,8 @@ def _default_app_version() -> str:
 
 
 class Settings(BaseSettings):
-    # Diretório raiz do projeto
-    BASE_DIR: Path = Path(__file__).resolve().parent.parent
+    # Raiz do backend (onde vivem apps/, config/, core/, migrations/, tests/)
+    BASE_DIR: Path = _BACKEND_DIR
 
     APP_NAME: str = "Praetor"
     APP_VERSION: str = _default_app_version()
@@ -46,7 +50,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[AnyHttpUrl] = []
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        # O `.env` é central e fica na raiz do repositório (um nível acima do
+        # backend), compartilhado com o Docker Compose.
+        env_file=str(_PROJECT_ROOT / ".env"),
         env_file_encoding="utf-8",
         # Ignora variáveis de ambiente sem campo correspondente (ex.: POSTGRES_*,
         # SERVER_*, HOSTNAME). Sem isto, um .env compartilhado com o Docker quebra

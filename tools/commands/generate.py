@@ -1,11 +1,11 @@
 import importlib
-from pathlib import Path
 
 import click
 from jinja2 import Environment, FileSystemLoader
 from sqlalchemy.orm.properties import ColumnProperty
 from sqlalchemy import inspect
 from core.utils import to_pascal_case
+from tools.paths import BACKEND_DIR, TEMPLATES_DIR
 
 
 @click.group("generate")
@@ -63,7 +63,7 @@ def generate_schemas(entity: str, app: str, force: bool):
 
     entity_name_lower = entity.lower()
     entity_name_pascal = to_pascal_case(entity)
-    app_path = Path(f"apps/{app}")
+    app_path = BACKEND_DIR / "apps" / app
 
     if not app_path.exists():
         click.secho(f"Error: App '{app}' not found at '{app_path}'.", fg="red")
@@ -109,7 +109,7 @@ def generate_schemas(entity: str, app: str, force: bool):
         return
     
     # Configura o ambiente Jinja2
-    template_dir = Path("core/templates/entity")
+    template_dir = TEMPLATES_DIR / "entity"
     env = Environment(loader=FileSystemLoader(template_dir))
     template = env.get_template("schema.py.j2")
 

@@ -75,7 +75,7 @@ services:
   api:
     image: ${PROJECT_NAME:-praetor}-api:prod
     build:
-      dockerfile: docker/Dockerfile.prod
+      dockerfile: ../docker/Dockerfile.prod
     restart: unless-stopped
     environment: *prod-backend-env
     ports:

@@ -26,6 +26,7 @@ include:
 
 services:
   api:
+    working_dir: /app/backend
     command: ["python", "manage.py", "run:server", "--host", "0.0.0.0", "--reload"]
     volumes:
       - ../../:/app
@@ -33,6 +34,7 @@ services:
       - "8000:8000"
 
   worker:
+    working_dir: /app/backend
     volumes:
       - ../../:/app
 

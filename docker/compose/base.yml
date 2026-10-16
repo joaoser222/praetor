@@ -52,8 +52,8 @@ services:
   api:
     image: ${PROJECT_NAME:-praetor}-api
     build:
-      context: ../..
-      dockerfile: docker/Dockerfile
+      context: ../../backend
+      dockerfile: ../docker/Dockerfile
     env_file:
       - ../../.env
     environment: *backend-env
