@@ -16,7 +16,7 @@ compatibility:
   - angular-convention
 ---
 
-# Commit Skill — Face Finder
+# Commit Skill — Praetor
 
 ## When to use
 
@@ -49,33 +49,32 @@ should trigger this skill.
 | `test` | Tests |
 | `style` | Code formatting, linting |
 
-### Scope (Face Finder modules)
+### Scope (Praetor modules)
 
-The scope must reflect the affected module or domain area. Use one of the following (snake_case):
+The scope must reflect the affected module or domain area. Use one of the
+following (snake_case). For a domain app it should be the app name itself
+(`backend/apps/<app>/`, e.g. `auth`).
 
-**Backend (api/app/features/):**
-- `auth` — Autenticação, sessões, registro
-- `collections` — Coleções de fotos, upload ZIP, indexação
-- `photos` — Fotos individuais, metadados, faces detectadas
-- `searches` — Buscas por rosto de referência, resultados
-- `realtime` — SSE, eventos em tempo real
+**Backend domains (`backend/apps/<app>/`):**
+- `auth` — Autenticação, sessões cookie-first, tokens, RBAC/permissões
+- *any app name* — Apps criados com `make:app <name>` (ex.: `store`)
 
-**Frontend (client/src/pages/):**
-- `collections` — Páginas de coleções (Index, Item, Form)
-- `searches` — Páginas de buscas (Index, Item, Form, SearchCollection)
-- `auth` — Login, registro
-- `settings` — Configurações do usuário
-- `layout` — Layout principal, navegação, toolbar
-- `reusables` — Componentes reutilizáveis (ImageGridPage, PhotoDetails, SearchBar, Toolbar, EmptyContainer)
+**Backend transversal (`backend/`):**
+- `core` — Base classes, middlewares, utils, Celery, auto-descoberta
+- `db` — Migrações Alembic, models, comandos `db:*`
+- `config` — `config/settings.py`, database, security, logging
+
+**Frontend (`frontend/`):**
+- `frontend` — SPA React/Mantine (features, componentes, rotas, i18n, build)
+- `auth` — Fluxo de login/sessão cookie-first do SPA
 
 **Transversal:**
-- `frontend` — Mudanças gerais no client (build, config, plugins)
-- `backend` — Mudanças gerais na api (config, deps, scripts)
-- `database` — Migrações, modelos, schemas
-- `docker` — docker-compose, Dockerfiles
-- `docs` — Documentação (README, AGENTS.md, etc.)
-- `tests` — Testes (backend pytest, frontend vitest)
-- `config` — Arquivos de configuração (.env.example, pyproject.toml, etc.)
+- `docker` — Dockerfiles e Compose (`docker/`)
+- `ci` — GitHub Actions (`.github/workflows/`)
+- `codegen` — Geradores e templates Jinja2 (`tools/`)
+- `deps` — Dependências (`pyproject.toml`)
+- `docs` — README, AGENTS.md, CONTRIBUTING.md, `docs/`
+- `test` — Suíte de testes quando não pertencer a um app
 
 Use the most specific scope possible. If changes affect multiple contexts,
 use the main context scope or create separate commits.
@@ -98,15 +97,15 @@ files since the last commit.
 
 Example output:
 ```
-M       app/Http/Controllers/ClientController.php
-A       app/Models/Client.php
-A       database/migrations/2026_07_31_000001_create_clients_table.php
-M       resources/js/pages/clients/Details.vue
+M       backend/apps/auth/services/user.py
+A       backend/apps/auth/repositories/token.py
+A       backend/migrations/versions/2000b93f04d2_initial_schema.py
+M       frontend/src/features/auth/action/service.ts
 ```
 
-Files already covered by `.gitignore` (`vendor/`, `node_modules/`,
-`public/build`, `.env`, etc.) never appear in `git diff` and must not be
-committed.
+Files already covered by `.gitignore` (`node_modules/`, `dist/`, `venv/`,
+`.env`, `*.db`, `__pycache__/`, etc.) never appear in `git diff` and must not
+be committed.
 
 ### Step 2: Group into logical commits
 
@@ -118,7 +117,7 @@ Analyze the changed files and group them following this logic:
 3. **Different modules** → separate commits per module
 4. **Very small changes** (1-2 trivial files) → can be grouped into a single
    commit if part of the same feature
-5. **Config/database/frontend infra** → `chore(config)`, `chore(database)`,
+5. **Config/database/frontend infra** → `chore(config)`, `chore(db)`,
    `chore(frontend)`, etc.
 
 Use good judgment: the goal is cohesive commits where each commit is an
@@ -135,23 +134,20 @@ Show the user the list of commits to be created:
 🤖 Proposed commits:
 ========================================
 
-1/3: feat(collections): adiciona validação de tamanho máximo do zip
+1/3: feat(auth): revoga o refresh token no logout
   Files:
-    M api/app/features/collections/service.py
-    M api/app/features/collections/router.py
-    M api/app/features/collections/schemas.py
-    A api/tests/features/collections/test_service.py
+    M backend/apps/auth/services/user.py
+    M backend/apps/auth/routers/action.py
+    A backend/tests/test_auth_flow.py
 
-2/3: feat(searches): implementa filtro por tolerância na busca
+2/3: feat(frontend): limpa o estado do SPA ao encerrar a sessão
   Files:
-    M api/app/features/searches/service.py
-    M api/app/features/searches/router.py
-    M client/src/pages/searches/Item.vue
-    M client/src/pages/searches/Form.vue
+    M frontend/src/features/auth/action/service.ts
+    M frontend/src/features/auth/action/AuthProvider.tsx
 
-3/3: chore(frontend): remove importação desnecessária de roboto-fontface
+3/3: chore(deps): move o Jinja2 para o extra dev
   Files:
-    M client/src/plugins/vuetify.js
+    M backend/pyproject.toml
 
 ========================================
 Aguardando confirmação de commit
@@ -213,45 +209,45 @@ If there is an error in any step, display the error message and stop.
 
 **Changed files:**
 ```
-M api/app/features/collections/service.py
-M api/app/features/collections/router.py
-M api/app/features/collections/schemas.py
-A api/tests/features/collections/test_service.py
+M backend/apps/auth/services/user.py
+M backend/apps/auth/routers/action.py
+M backend/apps/auth/schemas/user.py
+A backend/apps/auth/tests/test_user.py
 ```
 
 **Generated commit:**
 ```
-feat(collections): adiciona validação de tamanho máximo do ZIP
+feat(auth): adiciona revogação de sessão no logout
 ```
 
 ### Example 2: Multiple contexts (backend + frontend)
 
 **Changed files:**
 ```
-M api/app/features/searches/service.py
-M api/app/features/searches/router.py
-M client/src/pages/searches/Item.vue
-M client/src/pages/searches/Form.vue
+M backend/apps/auth/routers/user.py
+M backend/apps/auth/schemas/user.py
+M frontend/src/features/auth/user/service.ts
+M frontend/src/features/auth/user/pages/List.tsx
 ```
 
 **Generated commits:**
 ```
-1/2: feat(searches): implementa filtro por tolerância na busca
-2/2: feat(frontend): adiciona slider de tolerância na página de busca
+1/2: feat(auth): expõe a listagem paginada de usuários
+2/2: feat(frontend): consome a listagem paginada no DataTable
 ```
 
 ### Example 3: Fix + chore in the same batch
 
 **Changed files:**
 ```
-M api/app/shared/services/recognition.py
-M client/src/plugins/vuetify.js
+M backend/config/security.py
+M backend/pyproject.toml
 ```
 
 **Generated commits:**
 ```
-1/2: fix(recognition): corrige ordenação de verificação de arquivo nulo
-2/2: chore(frontend): remove importação desnecessária de roboto-fontface
+1/2: fix(config): deriva COOKIE_SECURE de DEBUG quando não definido
+2/2: chore(deps): adiciona o ruff ao extra dev
 ```
 
 ## Important rules
@@ -259,7 +255,6 @@ M client/src/plugins/vuetify.js
 - Commit description must be at most **72 characters**
 - Use the verb in the **present indicative** in Portuguese ("adiciona",
   not "adicionado")
-- Multi-word scopes use snake_case: `gateway_payments`,
-  `financial_categories`
+- Multi-word scopes use snake_case.
 - If there is only one changed file and it belongs to a different context
   than expected, use the file's directory context
