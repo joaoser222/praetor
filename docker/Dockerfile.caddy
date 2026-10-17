@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1
+#
+# Imagem de PRODUÇÃO do Caddy (o "dono" das URLs em produção).
+#
+# Estágio 1: compila o bundle do SPA com Vite (o VITE_API_URL é embutido no build).
+# Estágio 2: imagem Caddy com o bundle em /srv. O Caddyfile é montado em runtime
+#             pelo Compose (docker/caddy/Caddyfile.prod -> /etc/caddy/Caddyfile), então
+#             trocar domínio/rotas não exige rebuild.
+#
+# O contexto de build é a pasta ./frontend (mesmo .dockerignore de antes):
+#   docker build -f docker/Dockerfile.caddy -t praetor-caddy:prod \
+#     --build-arg VITE_API_URL=/api frontend
+
+# ------------------------------------------------------------------ build ----
+FROM node:22-slim AS build
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+# Variável consumida pelo Vite em tempo de BUILD (fica embutida no bundle).
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=$VITE_API_URL
+
+RUN npm run build
+
+# ---------------------------------------------------------------- runtime ----
+FROM caddy:2-alpine AS runtime
+
+# Somente o resultado do build (sem node_modules, sem código-fonte).
+COPY --from=build /app/dist /srv
+
+EXPOSE 80 443
+
+# O CMD padrão da imagem já é:
+#   caddy run --config /etc/caddy/Caddyfile --adapter caddyfile

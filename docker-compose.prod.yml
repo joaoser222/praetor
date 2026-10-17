@@ -1,4 +1,4 @@
-# Atalho para o ambiente de PRODUÇÃO (definido em docker/compose/production.yml).
+# Atalho para o ambiente de PRODUÇÃO (definido em docker/compose/prod.yml).
 # Uso a partir da raiz: docker compose -f docker-compose.prod.yml up --build -d
 #
 # O `name` é repetido de propósito: o Compose NÃO propaga o top-level `name` de
@@ -6,4 +6,4 @@
 name: ${PROJECT_NAME:-praetor}-prod
 
 include:
-  - docker/compose/production.yml
+  - docker/compose/prod.yml

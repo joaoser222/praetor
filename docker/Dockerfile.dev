@@ -7,7 +7,7 @@
 # bind mount (ver docker-compose.yml), então alterações no host aparecem no
 # container sem rebuild.
 #
-#   docker build -f Dockerfile -t praetor-api .
+#   docker build -f docker/Dockerfile.dev -t praetor-api backend
 #   docker compose up --build
 
 FROM python:3.12-slim
@@ -25,10 +25,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Instala apenas as dependências a partir do pyproject (a app não é empacotada).
+# Instala as dependências a partir do pyproject (a app não é empacotada).
+# O extra `dev` é obrigatório AQUI (diferente da imagem de produção): o compose
+# monta o repositório inteiro em /app, então o `manage.py` do container enxerga
+# `tools/` e carrega os geradores (que dependem de Jinja2) — sem isso o boot da
+# api quebra com ModuleNotFoundError.
 # Layer cacheável: só é invalidado quando o pyproject.toml muda.
 COPY pyproject.toml ./
-RUN pip install .
+RUN pip install ".[dev]"
 
 COPY . .
 

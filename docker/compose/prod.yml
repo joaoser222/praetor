@@ -4,24 +4,27 @@
 #
 # Importa os componentes de `base.yml` e adiciona o que é específico de
 # produção:
-#   - imagens multi-stage e imutáveis (sem bind mounts);
+#   - imagens multi-stage e imutáveis (sem bind mounts de código);
 #   - PostgreSQL + serviço `migrate` (efêmero) em vez de SQLite;
-#   - frontend servido por nginx (build estático + proxy /api), não pelo Vite;
+#   - o serviço `caddy` serve o SPA (bundle em /srv) e faz proxy de /api para a
+#     API, com TLS automático (Let's Encrypt) no APP_DOMAIN;
+#   - a API NÃO publica porta: o único ponto de entrada é o Caddy (80/443);
 #   - DEBUG desligado e `restart: unless-stopped`.
 #
 # O atalho na raiz (`docker-compose.prod.yml`) importa este arquivo, então a
-# partir da raiz (com .env ajustado; exija SECRET_KEY e POSTGRES_PASSWORD):
+# partir da raiz (com .env ajustado: exija SECRET_KEY, POSTGRES_PASSWORD e
+# APP_DOMAIN):
 #   docker compose -f docker-compose.prod.yml up --build -d
 #
-# Lê o mesmo .env central da raiz. Endpoints publicados: web em
-# http://localhost:8080 e api em http://localhost:8000 (banco e redis NÃO são
-# expostos para fora da rede interna).
+# Lê o mesmo .env central da raiz. Endpoint publicado: frontend + API em
+# https://<APP_DOMAIN> (banco, redis e a própria API não são expostos para fora
+# da rede interna).
 #
 # Identidade: o nome do projeto recebe o sufixo "-prod" (ex.: praetor-prod) e as
-# imagens viram <PROJECT_NAME>-api:prod / <PROJECT_NAME>-frontend:prod.
+# imagens viram <PROJECT_NAME>-api:prod / <PROJECT_NAME>-caddy:prod.
 #
-# CORS: usa o valor do .env central (que já inclui as origens do nginx, 8080).
-# Para restringir em produção, ajuste CORS_ORIGINS no .env.
+# CORS: o Caddy serve SPA e API na MESMA origem, então nenhuma origem cruzada é
+# necessária; ajuste CORS_ORIGINS no .env apenas se expor a API a outro host.
 #
 # Caminhos relativos são resolvidos a partir desta pasta (`docker/compose/`).
 # =============================================================================
@@ -32,7 +35,13 @@ include:
   - base.yml
 
 # --- Overrides do componente BACKEND específicos de produção -----------------
+# Autocontido (broker + forwarding incluídos): o `migrate` é efêmero e só recebe
+# este bloco, sem o `environment` de base.yml.
 x-prod-backend-env: &prod-backend-env
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/1
+  # Mesmo valor de x-backend-env (base.yml).
+  FORWARDED_ALLOW_IPS: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
   DEBUG: "False"
   DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-praetor}:${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}@db:5432/${POSTGRES_DB:-praetor}
 
@@ -78,8 +87,7 @@ services:
       dockerfile: ../docker/Dockerfile.prod
     restart: unless-stopped
     environment: *prod-backend-env
-    ports:
-      - "8000:8000"
+    # Sem `ports`: em produção a API só é alcançável pelo Caddy (80/443).
     depends_on:
       db:
         condition: service_healthy
@@ -97,17 +105,30 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      # Não consumir tasks antes do schema existir.
+      migrate:
+        condition: service_completed_successfully
 
-  frontend:
-    image: ${PROJECT_NAME:-praetor}-frontend:prod
+  # Substitui o antigo nginx do frontend: serve o SPA e faz proxy da API no mesmo
+  # host, terminando TLS. Recebe somente APP_DOMAIN (nenhum segredo).
+  caddy:
+    image: ${PROJECT_NAME:-praetor}-caddy:prod
     build:
-      dockerfile: ../docker/Dockerfile.frontend.prod
+      context: ../../frontend
+      dockerfile: ../docker/Dockerfile.caddy
       args:
-        # Mesma origem: o nginx faz proxy de /api para o serviço "api".
+        # Mesma origem: o Caddy faz proxy de /api para o serviço "api".
         VITE_API_URL: /api
     restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?defina APP_DOMAIN no .env}
     ports:
-      - "8080:80"
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Rotas/TLS: montado read-only, então mudar o Caddyfile exige apenas um
+      # restart do serviço (não um rebuild da imagem).
+      - ../caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
     depends_on:
       api:
         condition: service_healthy
