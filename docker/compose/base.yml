@@ -1,0 +1,103 @@
+# =============================================================================
+# Componentes compartilhados da stack (backend, frontend e infraestrutura)
+# =============================================================================
+#
+# Este arquivo NÃO representa um ambiente: ele define os componentes
+# reutilizáveis (backend: `api` e `worker`; infra: `redis` e `caddy`, o proxy que
+# gerencia as URLs). Os ambientes o importam via `include:` e sobrescrevem apenas
+# o que difere:
+#
+#   docker/compose/dev.yml          -> ambiente dev
+#   docker/compose/prod.yml         -> ambiente prod
+#
+# Os atalhos na raiz (`docker-compose.yml` e `docker-compose.prod.yml`) apenas
+# importam esses ambientes, para que `docker compose up` funcione de qualquer um
+# dos dois pontos.
+#
+# Identidade: o nome do projeto Compose, das imagens e dos containers vem da
+# variável PROJECT_NAME do .env central (slug em minúsculas), com fallback para
+# "praetor". Para reaproveitar o boilerplate noutro projeto, basta trocá-la.
+#
+# Variáveis de ambiente: todas vêm do .env central (raiz) via `env_file`. O
+# bloco `environment` abaixo sobrescreve somente o que precisa ser diferente
+# DENTRO da rede do compose (os serviços conversam pelo nome do serviço).
+#
+# Caminhos: em `include`, TODOS os caminhos relativos (context, dockerfile,
+# env_file, volumes) são resolvidos a partir da pasta DESTE arquivo
+# (`docker/compose/`), por isso usamos `../..` para chegar à raiz do projeto.
+# =============================================================================
+
+# --- Componente BACKEND: overrides de ambiente comuns a `api` e `worker` ------
+x-backend-env: &backend-env
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/1
+  # O backend roda atrás do Caddy: sem isto o uvicorn ignora o X-Forwarded-Proto
+  # (e as URLs absolutas que ele monta sairiam como http://).
+  # Apenas redes privadas do compose — nunca "*". O uvicorn devolve o primeiro
+  # valor não confiável do fim do X-Forwarded-For: o IP real, acrescentado pelo Caddy.
+  FORWARDED_ALLOW_IPS: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+
+services:
+  # ------------------------------ infraestrutura -----------------------------
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # -------------------------------- backend ----------------------------------
+  # No backend, apenas `api` declara `build`: `worker` (e o `migrate` de
+  # produção) reaproveitam a MESMA imagem, evitando builds duplicados.
+  api:
+    image: ${PROJECT_NAME:-praetor}-api
+    build:
+      context: ../../backend
+      dockerfile: ../docker/Dockerfile.dev
+    env_file:
+      - ../../.env
+    environment: *backend-env
+    depends_on:
+      redis:
+        condition: service_started
+
+  worker:
+    image: ${PROJECT_NAME:-praetor}-api
+    command: ["celery", "-A", "core.celery_app.celery_app", "worker", "--loglevel=info"]
+    env_file:
+      - ../../.env
+    environment: *backend-env
+    # A imagem do backend traz um HEALTHCHECK de HTTP (porta 8000) que não se
+    # aplica ao worker; aqui o teste é o ping do próprio Celery.
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A core.celery_app.celery_app inspect ping -t 10"]
+      interval: 30s
+      timeout: 15s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      redis:
+        condition: service_started
+
+  # ---------------------------- proxy (URLs) ---------------------------------
+  # O Caddy é quem expõe frontend e backend num único host. O componente base
+  # usa a imagem oficial; cada ambiente ajusta o resto:
+  #   dev         -> imagem oficial + docker/caddy/Caddyfile.dev (tls internal)
+  #   prod        -> imagem buildada (Dockerfile.caddy) + docker/caddy/Caddyfile.prod
+  # O serviço `frontend` (dev server do Vite) existe apenas no dev, já que em
+  # produção quem serve o SPA é este mesmo Caddy.
+  caddy:
+    image: caddy:2-alpine
+    volumes:
+      # Certificados (ACME em produção; a CA local do Caddy no dev) e o
+      # estado interno. Volume nomeado para sobreviver a restarts.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  caddy_data:
+  caddy_config:

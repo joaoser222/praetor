@@ -1,0 +1,63 @@
+# syntax=docker/dockerfile:1
+#
+# Imagem de PRODUÇÃO da API (e do worker Celery).
+#
+# Multi-stage: as ferramentas de compilação ficam apenas no estágio "builder";
+# a imagem final leva somente as dependências instaladas e o código-fonte.
+#
+#   docker build -f docker/Dockerfile.prod -t praetor-api:prod backend
+#   docker compose -f docker-compose.prod.yml up --build -d
+#
+# O worker usa a MESMA imagem, sobrescrevendo o comando:
+#   celery -A core.celery_app.celery_app worker --loglevel=info
+
+# ---------------------------------------------------------------- builder ----
+FROM python:3.12-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+# libpq-dev/build-essential só são necessários para compilar dependências.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Interpretador isolado, copiado inteiro para o estágio final.
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+# Instala apenas as dependências a partir do pyproject (a app não é empacotada).
+COPY pyproject.toml ./
+RUN pip install --upgrade pip && pip install .
+
+# ---------------------------------------------------------------- runtime ----
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/opt/venv/bin:$PATH"
+
+# Apenas a biblioteca de runtime do Postgres (libpq5) + curl para healthcheck manual.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libpq5 \
+        curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 1000 appuser
+
+COPY --from=builder /opt/venv /opt/venv
+
+WORKDIR /app
+COPY --chown=appuser:appuser . .
+
+USER appuser
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD python -c "import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status == 200 else 1)"
+
+# Sem --reload e sem --root-path: 4 workers ASGI.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

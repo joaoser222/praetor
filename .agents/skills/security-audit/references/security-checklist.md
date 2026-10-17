@@ -29,12 +29,12 @@ reviewed with evidence, or finding.
 - Compare fixed secrets in constant time where relevant.
 - Bind sessions/callbacks/device flows to the initiating principal.
 
-## 3. Authorization and multi-tenancy
+## 3. Authorization and data scoping
 
 - Deny by default at a centralized capability/policy boundary.
 - Authenticate and authorize every route, method, message, background job, and
   alternate protocol entry point.
-- Check object ownership and tenant/workspace/project scope on every read,
+- Check object ownership and user scope on every read,
   search, mutation, export, backup, restore, and destructive operation.
 - Fail closed for missing, partial, ambiguous, stale, or conflicting identity.
 - Keep cache/index/file/object-store keys fully scoped.
@@ -42,7 +42,7 @@ reviewed with evidence, or finding.
   capability reuse, and check/use races.
 - Verify admin/root separation for both UI and API/helper paths.
 - Ensure counts, existence errors, timing, logs, search ranking, embeddings, and
-  generated summaries do not leak another tenant's data.
+  generated summaries do not leak another user's data.
 
 ## 4. Input and injection
 
@@ -84,7 +84,8 @@ reviewed with evidence, or finding.
 - Configure CORS narrowly; use CSRF defenses for cookie-authenticated mutation.
 - Set secure cookie flags and browser security headers where applicable.
 - Verify webhook signatures over raw bytes; prevent replay.
-- Do not leak stack traces, secrets, paths, tenant existence, or internal URLs.
+- Do not leak stack traces, secrets, paths, another user's existence, or
+  internal URLs.
 - Validate TLS certificates/hostnames; make plaintext remote use explicit.
 - Prevent request smuggling/desync at proxy/backend boundaries where applicable.
 
@@ -113,7 +114,7 @@ reviewed with evidence, or finding.
 - Redact nested and structured fields, not only obvious string patterns.
 - Protect exports/backups and avoid insecure default destinations.
 - Make cross-border/external provider disclosure visible where relevant.
-- Test deletion/retention and user/tenant separation.
+- Test deletion/retention and user separation.
 
 ## 9. Cryptography
 

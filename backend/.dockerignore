@@ -1,0 +1,35 @@
+# Contexto de build do BACKEND (api/worker) — a pasta `backend/`.
+# Mantém a imagem enxuta: sem VCS, sem segredos, sem testes e sem caches.
+
+# Versionamento / editores
+.git
+.gitignore
+.idea
+.vscode
+
+# Segredos e ambiente (as variáveis chegam via compose/env, não pelo arquivo)
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Artefatos de build local (pip install / pip install -e)
+build/
+*.egg-info/
+
+# Bancos locais e dados
+*.db
+data/
+
+# Testes e documentação (desnecessários em runtime)
+tests/
+conftest.py
+docs/
+*.md

@@ -2,32 +2,40 @@
 
 Get your Praetor project up and running in minutes.
 
+> **Onde rodar os comandos:** a CLI do backend vive em `backend/manage.py`, então os
+> comandos abaixo partem de `backend/` (`cd backend`). Da raiz do repositório, o
+> equivalente é `python backend/manage.py <comando>` — nenhum caminho depende do CWD.
+
 ## 1. Environment Setup
 
 ```bash
-# Clone and enter the project
+# Clona e entra no projeto
 git clone <repo_url>
 cd praetor
 
-# Setup Python environment
+# Configura o ambiente Python (a partir de backend/)
 python -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+cd backend
+pip install -e ".[dev]"
+cd ..
 
-# Initial configuration
+# Configuração inicial (na raiz, compartilhada com o Docker Compose)
 cp .env.example .env
 ```
 
 ## 2. Initialize Database & Security
 
 ```bash
-# Apply migrations (o projeto já inclui a migração inicial do schema)
+cd backend
+
+# Aplica as migrações (o projeto já inclui a migração inicial do schema)
 python manage.py db:migrate
 
-# Create an Admin user
+# Cria um usuário administrador
 python manage.py auth:createsuperuser
 
-# Generate initial system permissions
+# Gera as permissões iniciais do sistema
 python manage.py auth:makepermissions
 ```
 
@@ -38,15 +46,22 @@ python manage.py auth:makepermissions
 
 ### Step 1: Generate a Feature
 ```bash
-# Create an app (domain)
+cd backend
+
+# Cria um app (domínio)
 python manage.py make:app store
 
-# Create an entity (module)
+# Cria uma entidade (módulo)
 python manage.py make:entity product --app store
 ```
 
+Os geradores (`make:*`, `rm:*`, `generate:*`) vivem em `tools/` e **não** fazem
+parte da imagem de produção: eles só existem quando a pasta `tools/` está presente
+(comando rodando do repositório, não de dentro da imagem do backend).
+
 ### Step 2: Run the APIs
 ```bash
+cd backend
 python manage.py run:server
 ```
 
@@ -55,7 +70,7 @@ python manage.py run:server
 Praetor comes with a professional **React + Vite + Mantine** frontend.
 
 ```bash
-cd web
+cd frontend
 npm install
 npm run dev
 ```
@@ -68,11 +83,20 @@ When you run `make:entity`, the system automatically generates:
 
 ## 5. Deployment with Docker
 
-To run the entire ecosystem (API, Postgres, Redis, Celery, Frontend) in a production-ready environment:
+The container setup lives in `docker/`: the shared components
+(`docker/compose/base.yml`) are imported by two environments via Compose's
+`include` (`docker/compose/dev.yml` and `docker/compose/prod.yml`).
+Both read the same central `.env`.
+
+**Development** (SQLite + Vite dev server):
 
 ```bash
-cp docker-compose.example.yml docker-compose.yml
-cp Dockerfile.example Dockerfile
-cp Dockerfile.web.example Dockerfile.web
-docker-compose up --build
+cp .env.example .env
+docker compose up --build
+```
+
+**Production** (PostgreSQL + Caddy, automatic TLS) — set `SECRET_KEY`, `POSTGRES_PASSWORD` and `APP_DOMAIN` in `.env` first:
+
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
 ```

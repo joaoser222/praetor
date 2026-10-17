@@ -1,21 +1,21 @@
 ---
 name: python-comments
 description: >
-  Comment and docstring standard for api/: Google Python Style Guide §3.8
+  Comment and docstring standard for backend/: Google Python Style Guide §3.8
   applied strictly (spacing, punctuation, never narrate the code, docstring
   summary line plus Args/Returns/Yields/Raises/Attributes sections, TODO
   format) while keeping the house language split: comments and docstrings are
   written in Brazilian Portuguese (pt-BR), code identifiers stay in English.
   Also defines which comments are unnecessary or stale and may be removed,
   which must never be removed, and how to verify. Load when writing,
-  reviewing or cleaning any Python comment, docstring or TODO under api/.
+  reviewing or cleaning any Python comment, docstring or TODO under backend/.
 ---
 
 # Python comments: house rules
 
 The Google Python Style Guide (§3.8) is the standard for **form**. This skill
 adds what the guide does not decide for us: the **language** (pt-BR, per
-AGENTS.md §5), **what may be deleted**, and **how to verify**.
+AGENTS.md), **what may be deleted**, and **how to verify**.
 
 This file is written in English because it instructs the model. The comments
 and docstrings it governs are written in **pt-BR**; every example below
@@ -23,7 +23,7 @@ follows that.
 
 ## When to load
 
-- Writing any `#` comment, docstring or `TODO` under `api/`.
+- Writing any `#` comment, docstring or `TODO` under `backend/`.
 - Reviewing a diff that touches comments.
 - A request to clean up, remove or standardize comments.
 - Before declaring a comment-related task done.
@@ -39,8 +39,8 @@ follows that.
 ## Block comments
 
 ```python
-# Política de upload: o limite vem do Settings, não deste módulo.
-max_size = settings.max_zip_size
+# O access token é stateless: só o `exp` encerra a sessão; o logout não o invalida.
+token = self._create_access_token(user_id)
 ```
 
 1. `#` followed by **one space**, then the text.
@@ -60,7 +60,7 @@ max_size = settings.max_zip_size
 ## Inline comments (end of line)
 
 ```python
-search_ids = []  # Placeholder intencional; ver AGENTS §7 (F841).
+results = []  # Placeholder intencional; ver AGENTS.md (F841).
 ```
 
 1. **Two or more spaces** between code and `#`, then **one space** after it.
@@ -105,26 +105,26 @@ within the file. Supported: `Args:`, `Returns:`, `Yields:`, `Raises:`,
 `Attributes:`, `Example:`.
 
 ```python
-async def get_tenant_orders(
-    tenant_id: UUID,
+async def revoke_user_sessions(
+    user_id: UUID,
     *,
-    status: OrderStatus | None = None,
-    limit: int = 50,
-) -> list[Order]:
-    """Lista os pedidos de um tenant, do mais recente ao mais antigo.
+    keep_current: bool = False,
+    reason: str | None = None,
+) -> int:
+    """Revoga os refresh tokens ativos de um usuário.
 
-    Sempre aplica o filtro de tenant; nunca retorna pedidos de outro tenant.
+    Sempre filtra pelo usuário informado; nunca toca nas sessões de outro usuário.
 
     Args:
-        tenant_id: Identificador do tenant dono dos pedidos.
-        status: Se informado, restringe a pedidos nesse status.
-        limit: Máximo de pedidos retornados. Deve ser positivo.
+        user_id: Identificador do usuário dono das sessões.
+        keep_current: Se verdadeiro, preserva o refresh token da sessão atual.
+        reason: Motivo registrado na auditoria. Não pode ser vazio.
 
     Returns:
-        Pedidos ordenados por criação decrescente. Lista vazia se não houver.
+        Quantidade de tokens revogados. Zero se não houver sessão ativa.
 
     Raises:
-        ValueError: Se `limit` não for positivo.
+        ValueError: Se `reason` for informado e estiver vazio.
     """
 ```
 
@@ -177,12 +177,12 @@ When a docstring feeds OpenAPI it is read by API consumers:
 
 ## Language
 
-- Comments and docstrings: **pt-BR** (AGENTS.md §5, the defining split). The
-  Google guide prescribes form, not language.
+- Comments and docstrings: **pt-BR** (see AGENTS.md, "Project conventions (language and naming)",
+  the defining split). The Google guide prescribes form, not language.
 - Identifiers (variables, functions, classes, modules): **English**.
 - Established technical terms may stay in English inside a Portuguese
-  sentence (`tenant`, `payload`, `middleware`); wrap symbol names in
-  backticks (`` `tenant_id` ``).
+  sentence (`payload`, `middleware`, `token`); wrap symbol names in backticks
+  (`` `user_id` ``).
 - Never "fix" the split by translating comments to English or identifiers to
   Portuguese.
 - Exception messages and log messages follow their own AGENTS.md rule; this
@@ -197,7 +197,7 @@ When a docstring feeds OpenAPI it is read by API consumers:
 | `x = 1 # timeout` | `x = 1  # Timeout em segundos; ver SLA do gateway.` |
 | `"""Função que cria usuário"""` | `"""Cria um usuário e envia o e-mail de boas-vindas."""` |
 | `Returns: str: o nome.` | `Returns: Nome de exibição, sem espaços nas pontas.` |
-| `Args: user_id (int): o id` | `Args: user_id: Identificador do usuário no tenant atual.` |
+| `Args: user_id (int): o id` | `Args: user_id: Identificador do usuário autenticado.` |
 | `# TODO: arrumar isso` | `# TODO: PROJ-123 - Remover após migração do schema v2.` |
 | `# print(df.head())` | *(delete; git keeps history)* |
 
@@ -205,7 +205,7 @@ When a docstring feeds OpenAPI it is read by API consumers:
 
 - **Narration**: restates the adjacent code (`# incrementa o contador`).
 - **Stale architecture**: references to paths or layers that no longer exist
-  (`app/shared/`, `app/views/`, `features/*/`, "fatia", "vertical slice").
+  (ex.: `web/`, agora `frontend/`; `core/templates/`, agora `tools/templates/`).
   Rewrite if the *why* still applies to the new structure; delete otherwise.
 - **Dead instructions**: "descomente para…", TODOs pointing at finished work,
   commented-out code blocks (git history keeps them).
@@ -218,11 +218,11 @@ When a docstring feeds OpenAPI it is read by API consumers:
 
 ## What must never be removed
 
-- **Why-comments**: the reason behind a non-obvious choice (AGENTS §8: bug
+- **Why-comments**: the reason behind a non-obvious choice (AGENTS.md: bug
   fixes come with the reason).
 - **Contract notes**: frontend/backend contracts ("não renomeie essa chave"),
-  security invariants (httpOnly, tenant filter) and known-issue notes
-  (AGENTS §7).
+  security invariants (cookies `HttpOnly`, sessão cookie-first) and known-issue
+  notes (AGENTS.md).
 - **Test intent**: characterization comments saying what an assertion
   protects.
 - **Justified suppressions**: `# noqa`, `# type: ignore` and `# pragma` with
@@ -241,8 +241,10 @@ When a docstring feeds OpenAPI it is read by API consumers:
 
 ## Tooling
 
-Suggested `pyproject.toml` configuration so `ruff` covers form automatically
-(language and semantics remain human review):
+The project's `backend/pyproject.toml` currently selects only `E9` and `F`, so
+docstring/comment **form** is a human review here. The suggested configuration
+below makes `ruff` cover it automatically (language and semantics remain human
+review):
 
 ```toml
 [tool.ruff.lint]
@@ -257,16 +259,17 @@ convention = "google"
 
 ## Verification
 
-- `grep -rn '#[^#! \t]' api --include='*.py'` → only shebang/`noqa` remain.
-- `grep -rnE '\S #' api/app --include='*.py'` → no inline comment closer than
-  two spaces to the code.
-- `grep -rnE '#.*(shared/|app\.views|features/|fatia)' api` → empty.
-- `grep -rnP '#\s*TODO(?!:)' api --include='*.py'` → empty (TODO without colon).
-- `grep -rnE '^\s*#\s*(print|import|def |return )' api --include='*.py'` →
+- `grep -rn '#[^#! \t]' backend --include='*.py'` → only shebang/`noqa` remain.
+- `grep -rnE '\S #' backend/apps --include='*.py'` → no inline comment closer
+  than two spaces to the code.
+- `grep -rnE '#.*(web/|core/templates/|app\.views|shared/)' backend` → empty.
+- `grep -rnP '#\s*TODO(?!:)' backend --include='*.py'` → empty (TODO without
+  colon).
+- `grep -rnE '^\s*#\s*(print|import|def |return )' backend --include='*.py'` →
   empty (commented-out code).
-- `ruff check api` → count does not grow; `ruff check api --select D` → no new
-  violations.
-- `pytest` → green.
+- `ruff check backend` → count does not grow; `ruff check backend --select D` →
+  no new violations.
+- `pytest` (in `backend/`) → green.
 
 ## Final checklist
 

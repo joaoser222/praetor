@@ -1,0 +1,44 @@
+# =============================================================================
+# Caddyfile de PRODUÇÃO — gerencia as URLs de frontend e backend num único host
+# =============================================================================
+#
+#   https://<APP_DOMAIN>/        -> SPA (arquivos estáticos em /srv)
+#   https://<APP_DOMAIN>/api/*   -> serviço "api" (backend FastAPI na porta 8000)
+#
+# TLS: automático via ACME (Let's Encrypt) — exige domínio real apontando para
+# este host e as portas 80/443 públicas. Os certificados ficam no volume
+# `caddy_data` (/data), que também evita gastar o rate limit do ACME a cada
+# restart.
+#
+# Variáveis (vêm do .env central via `environment` do Compose):
+#   APP_DOMAIN  domínio público, ex.: app.exemplo.com   (obrigatório)
+#
+# Este arquivo é montado em /etc/caddy/Caddyfile pelo Compose — alterá-lo exige
+# apenas um restart do serviço `caddy`, não um rebuild.
+# =============================================================================
+{$APP_DOMAIN} {
+	# Compressão (equivalente ao gzip do nginx que este arquivo substitui).
+	encode zstd gzip
+
+	# Uploads podem passar do tamanho padrão (equivalente ao client_max_body_size 25m).
+	request_body {
+		max_size 25MB
+	}
+
+	# API: mantém a URI completa (/api/...). Os routers do backend já montam
+	# seus endpoints em /api/<app>, então nada é reescrito aqui.
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	# SPA: qualquer rota desconhecida cai em index.html (React Router).
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Assets com hash no nome podem ser cacheados agressivamente.
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+}

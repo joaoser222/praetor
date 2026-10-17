@@ -23,9 +23,15 @@ RG_COMMON=(
   --glob '!target/**'
   --glob '!node_modules/**'
   --glob '!vendor/**'
+  --glob '!.venv/**'
+  --glob '!venv/**'
+  --glob '!__pycache__/**'
+  --glob '!*.egg-info/**'
+  --glob '!.pytest_cache/**'
   --glob '!dist/**'
   --glob '!build/**'
   --glob '!coverage/**'
+  --glob '!htmlcov/**'
   --glob '!docs/**'
   --glob '!README*'
   --glob '!CHANGELOG.md'
@@ -80,11 +86,14 @@ find . -type f \
      -o -name Gemfile -o -name '*.gemspec' -o -name pom.xml \
      -o -name build.gradle -o -name build.gradle.kts -o -name '*.csproj' \
      -o -name '*.sln' -o -name composer.json -o -name mix.exs \
-     -o -name Dockerfile -o -name 'Dockerfile.*' -o -name docker-compose.yml \
-     -o -name docker-compose.yaml -o -name '.gitmodules' -o -name '.gitattributes' \
-     -o -path '*/.github/workflows/*.yml' -o -path '*/.github/workflows/*.yaml' \) \
+     -o -name Dockerfile -o -name 'Dockerfile.*' -o -name 'docker-compose*.y*ml' \
+     -o -name '.env.example' -o -name 'Caddyfile*' \
+     -o -name '.gitmodules' -o -name '.gitattributes' \
+     -o -path '*/compose/*' -o -path '*/.github/workflows/*.yml' \
+     -o -path '*/.github/workflows/*.yaml' \) \
   -not -path './.git/*' -not -path '*/node_modules/*' -not -path '*/target/*' \
-  -not -path '*/vendor/*' -print 2>/dev/null | sort | awk 'NR <= 150 { print }'
+  -not -path '*/vendor/*' -not -path '*/.venv/*' -not -path '*/venv/*' \
+  -not -path '*/__pycache__/*' -print 2>/dev/null | sort | awk 'NR <= 150 { print }'
 
 section 'Tracked executable, symlink, and submodule modes'
 git ls-files -s 2>/dev/null \
@@ -97,8 +106,8 @@ scan 'Process and dynamic execution candidates' \
 scan 'Network, redirect, webhook, and SSRF candidates' \
   '(reqwest|hyper::|ureq|fetch\(|axios|requests\.|httpx|urllib|Net::HTTP|Faraday|HTTPoison|Finch|HttpClient|WebClient|http\.NewRequest|urlopen|redirect|Location:|webhook|169\.254\.169\.254|metadata\.google|localhost|127\.0\.0\.1)'
 
-scan 'Authentication, authorization, and tenant-scope candidates' \
-  '(Authorization|Bearer|api[_-]?key|auth[_-]?token|session[_-]?id|authorize|permission|capabilit|is_admin|is_root|tenant|workspace[_-]?id|project[_-]?id|user[_-]?id|role|scope)'
+scan 'Authentication, authorization, and object-scope candidates' \
+  '(Authorization|Bearer|api[_-]?key|auth[_-]?token|session[_-]?id|access[_-]?token|refresh[_-]?token|authorize|require_permission|require_role|is_superuser|permission|capabilit|is_admin|user[_-]?id|role|scope)'
 
 scan 'Query, template, deserialization, and injection candidates' \
   '(execute\(|query\(|raw[_ ]?sql|format!\(.*(SELECT|INSERT|UPDATE|DELETE)|SELECT .*(\+|format|\$\{)|pickle|Marshal\.load|YAML\.load|yaml\.load|unserialize|ObjectInputStream|BinaryFormatter|eval\(|exec\(|innerHTML|dangerouslySetInnerHTML|render_template_string|template\.HTML|shell\s*=\s*True)'

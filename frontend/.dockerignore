@@ -1,0 +1,12 @@
+# Contexto de build do FRONTEND (pasta ./frontend).
+
+node_modules
+dist
+.git
+.gitignore
+npm-debug.log*
+
+# Segredos (o Vite embute VITE_* no build; nada de .env dentro da imagem)
+.env
+.env.*
+README.md

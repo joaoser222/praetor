@@ -24,6 +24,8 @@ wheels/
 
 # Environments
 .env
+.env.*
+!.env.example
 venv/
 env/
 
@@ -40,3 +42,6 @@ data/
 
 # Others
 .vscode/*
+
+# Workspace de planejamento (planos e tasks locais do agente)
+workspace/

@@ -1,0 +1,7 @@
+from sqlalchemy import Column, Integer
+from core.base_model import BaseModel
+
+class {{ class_name }}(BaseModel):
+    __tablename__ = '{{ table_name }}'
+
+    id = Column(Integer, primary_key=True, index=True)

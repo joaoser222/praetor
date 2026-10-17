@@ -1,0 +1,47 @@
+# =============================================================================
+# Caddyfile de DESENVOLVIMENTO — frontend e backend num único host local
+# =============================================================================
+#
+#   https://<DEV_DOMAIN>:8443/        -> dev server do Vite (SPA + HMR)
+#   https://<DEV_DOMAIN>:8443/api/*   -> serviço "api" (backend FastAPI)
+#
+# Portas: 8080 (HTTP, só para o redirect) e 8443 (HTTPS), publicadas pelo
+# dev.yml em vez de 80/443 para não brigar com serviços já rodando no host.
+# Se 80/443 estiverem livres e você preferir a URL sem porta, troque aqui
+# (`http_port 80` / `https_port 443`) e em docker/compose/dev.yml
+# (`"80:80"` / `"443:443"`).
+#
+# TLS: `tls internal` — o certificado é assinado pela CA interna do Caddy (sem
+# ACME, sem domínio público). O navegador avisa até essa CA ser confiada:
+#
+#   docker compose exec caddy cat /data/caddy/pki/authorities/local/root.crt \
+#     | sudo tee /usr/local/share/ca-certificates/caddy-local.crt >/dev/null \
+#     && sudo update-ca-certificates
+#
+# A CA fica no volume `caddy_data`, então a confiança só precisa ser feita uma
+# vez. `*.localhost` já é resolvido para 127.0.0.1 pelo próprio navegador —
+# nenhum /etc/hosts é necessário.
+#
+# Variável (vem do .env central via `environment` do Compose):
+#   DEV_DOMAIN  host local (padrão do dev.yml: <PROJECT_NAME>.localhost)
+#
+# Montado em /etc/caddy/Caddyfile pelo dev.yml.
+# =============================================================================
+{
+	http_port 8080
+	https_port 8443
+}
+{$DEV_DOMAIN} {
+	tls internal
+	encode zstd gzip
+
+	# A API é servida no MESMO host do SPA (sem CORS, cookies de mesma origem).
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	# Todo o resto — SPA e o websocket do HMR — fica com o dev server do Vite.
+	handle {
+		reverse_proxy frontend:5173
+	}
+}

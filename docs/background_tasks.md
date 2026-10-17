@@ -8,14 +8,20 @@ Settings are managed in your `.env` file:
 
 ```dotenv
 CELERY_BROKER_URL="redis://localhost:6379/0"
-CELERY_RESULT_BACKEND="db+sqlite:///celery_results.db"
+CELERY_RESULT_BACKEND="redis://localhost:6379/1"
 ```
+
+> O projeto usa **Redis** como broker e result backend (a dependência instalada é
+> `celery[redis]`), em linha com o `.env.example` e o `docker/compose/base.yml`.
+> Guardar os resultados no banco (`CELERY_RESULT_BACKEND="db+sqlite:///celery_results.db"`
+> ou `db+postgresql://...`) é uma alternativa válida, mas exige o extra
+> `celery[sqlalchemy]` e um driver síncrono.
 
 The system is pre-configured to automatically discover tasks in your modular apps.
 
 ## Creating Tasks
 
-When you create a new app with `python manage.py make:app <name>`, a `tasks.py` file is generated automatically.
+When you create a new app with `python manage.py make:app <name>` (a partir de `backend/`), a `tasks.py` file is generated automatically inside `backend/apps/<name>/`.
 
 To define a task, use the `@celery_app.task` decorator:
 
@@ -24,16 +30,17 @@ from core.celery_app import celery_app
 
 @celery_app.task(name="notifications.send_welcome_email")
 def send_welcome_email(email: str):
-    # Logic to send email
+    # Lógica de envio do e-mail
     print(f"Sending email to {email}")
     return True
 ```
 
 ## Running the Worker
 
-To start a worker that will listen for and execute tasks:
+To start a worker that will listen for and execute tasks (a partir de `backend/`):
 
 ```bash
+cd backend
 celery -A core.celery_app.celery_app worker --loglevel=info
 ```
 
@@ -47,6 +54,6 @@ In your services or routers, you can queue a task using `.delay()`:
 from .tasks import send_welcome_email
 
 async def some_action():
-    # This returns immediately, the task runs in the background
+    # Retorna imediatamente; a task roda em segundo plano
     send_welcome_email.delay("user@example.com")
 ```

@@ -1,0 +1,93 @@
+# =============================================================================
+# Ambiente de DESENVOLVIMENTO
+# =============================================================================
+#
+# Importa os componentes de `base.yml` (api, worker, redis, caddy) e adiciona o
+# que é específico do desenvolvimento:
+#   - o serviço `frontend` (dev server do Vite com HMR), que NÃO existe em
+#     produção — lá quem serve o SPA é o Caddy;
+#   - o `caddy` do dev: host único (DEV_DOMAIN) com `tls internal`, servindo
+#     as MESMAS URLs da produção (mesma origem para SPA e API);
+#   - bind mounts (o código do host é refletido no container);
+#   - servidor do Vite com HMR e auto-reload do uvicorn;
+#   - SQLite (sem serviço de banco);
+#   - portas publicadas para acesso local (caddy 8080/8443, api 8000, web 5173,
+#     redis 6379) — todas vinculadas ao loopback por padrão; `DEV_BIND_HOST` no
+#     .env libera a rede (ex.: testar o SPA no celular).
+#
+# O atalho na raiz (`docker-compose.yml`) importa este arquivo, então a partir
+# da raiz basta:
+#   cp .env.example .env
+#   docker compose up --build
+#
+# Endpoints: https://<DEV_DOMAIN>:8443 (Caddy, padrão <PROJECT_NAME>.localhost) ou, sem passar pelo proxy,
+# http://localhost:5173 (web) e http://localhost:8000 (api).
+#
+# Caminhos relativos são resolvidos a partir desta pasta (`docker/compose/`).
+# =============================================================================
+
+name: ${PROJECT_NAME:-praetor}
+
+include:
+  - base.yml
+
+# --- Componente FRONTEND: variáveis de runtime do servidor do Vite ------------
+x-frontend-env: &frontend-env
+  VITE_APP_NAME: ${APP_NAME:-Praetor}
+  # Mesma origem: o SPA chama /api/* e o Caddy encaminha para a API.
+  VITE_API_URL: ${VITE_API_URL:-/api}
+  # Alvo do proxy do próprio Vite, para quem acessa http://localhost:5173 direto.
+  VITE_PROXY_TARGET: ${VITE_PROXY_TARGET:-http://api:8000}
+  # Host pelo qual o Caddy acessa o Vite (liberado em server.allowedHosts).
+  DEV_DOMAIN: ${DEV_DOMAIN:-${PROJECT_NAME:-praetor}.localhost}
+
+services:
+  api:
+    working_dir: /app/backend
+    command: ["python", "manage.py", "run:server", "--host", "0.0.0.0", "--reload"]
+    volumes:
+      - ../../:/app
+    ports:
+      - "${DEV_BIND_HOST:-127.0.0.1}:8000:8000"
+
+  worker:
+    working_dir: /app/backend
+    volumes:
+      - ../../:/app
+
+  redis:
+    ports:
+      - "${DEV_BIND_HOST:-127.0.0.1}:6379:6379"
+
+  # Somente no dev: em produção o SPA é servido pela imagem do Caddy.
+  frontend:
+    image: ${PROJECT_NAME:-praetor}-frontend
+    build:
+      context: ../../frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    environment: *frontend-env
+    volumes:
+      - ../../frontend:/app
+      # Volume anônimo preserva o node_modules instalado na imagem.
+      - /app/node_modules
+    ports:
+      - "${DEV_BIND_HOST:-127.0.0.1}:5173:5173"
+    depends_on:
+      api:
+        condition: service_started
+
+  # Proxy que unifica as URLs do dev (o mesmo desenho da produção).
+  # Usa a imagem oficial + o Caddyfile.dev montado. As portas publicadas são
+  # 8080/8443 (e não 80/443) para não brigar com serviços já rodando no host —
+  # a URL fica https://<DEV_DOMAIN>:8443.
+  caddy:
+    environment:
+      DEV_DOMAIN: ${DEV_DOMAIN:-${PROJECT_NAME:-praetor}.localhost}
+    ports:
+      - "${DEV_BIND_HOST:-127.0.0.1}:8080:8080"
+      - "${DEV_BIND_HOST:-127.0.0.1}:8443:8443"
+    volumes:
+      - ../caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+    depends_on:
+      frontend:
+        condition: service_started

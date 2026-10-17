@@ -31,17 +31,21 @@ jobs:
         python-version: '3.12'
 
     - name: Install dependencies
+      working-directory: ./backend
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
+        pip install -e ".[dev]"
 
     - name: Create .env file
       run: cp .env.example .env
 
+    # `../tools` é lintado com a mesma config (o pyproject vive em backend/).
     - name: Lint (ruff)
-      run: ruff check .
+      working-directory: ./backend
+      run: ruff check . ../tools
 
     - name: Run tests
+      working-directory: ./backend
       run: pytest
 
   frontend:
@@ -50,7 +54,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./web
+        working-directory: ./frontend
 
     steps:
     - uses: actions/checkout@v4
@@ -60,7 +64,7 @@ jobs:
       with:
         node-version: '22'
         cache: 'npm'
-        cache-dependency-path: web/package-lock.json
+        cache-dependency-path: frontend/package-lock.json
 
     - name: Install dependencies
       run: npm ci
@@ -84,27 +88,37 @@ jobs:
         python-version: '3.12'
 
     - name: Install backend dependencies
+      working-directory: ./backend
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -e ".[dev]"
 
     - name: Create .env file
       run: cp .env.example .env
 
     - name: Generate app and entity
+      working-directory: ./backend
       run: |
         python manage.py make:app sample
         python manage.py make:entity product --app sample
+
+    - name: Lint generated backend
+      working-directory: ./backend
+      run: ruff check apps/sample
+
+    - name: Test generated backend
+      working-directory: ./backend
+      run: pytest apps/sample/tests
 
     - name: Set up Node
       uses: actions/setup-node@v4
       with:
         node-version: '22'
         cache: 'npm'
-        cache-dependency-path: web/package-lock.json
+        cache-dependency-path: frontend/package-lock.json
 
     - name: Build generated frontend
-      working-directory: ./web
+      working-directory: ./frontend
       run: |
         npm ci
         npm run build

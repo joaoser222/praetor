@@ -38,27 +38,37 @@ Praetor is built to accelerate development without sacrificing architectural int
 
 ## 🚀 Quick Start
 
+> **Onde rodar os comandos do backend:** a CLI vive em `backend/manage.py`, então os
+> comandos `manage.py` são executados a partir de `backend/` (`cd backend`). Da raiz
+> do repositório, o equivalente é `python backend/manage.py <comando>`.
+
 ### 1. Installation
 
 ```bash
-# Clone the repository
+# Clona o repositório
 git clone <your-repo-url>
 cd praetor
 
-# Setup Backend
+# Configura o backend
 python -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+cd backend
+pip install -e ".[dev]"
+cd ..
+
+# Configuração central (compartilhada com o Docker Compose)
 cp .env.example .env
 
-# Setup Frontend
-cd web
+# Configura o frontend
+cd frontend
 npm install
+cd ..
 ```
 
 ### 2. Initialize Database
 
 ```bash
+cd backend
 python manage.py db:migrate
 python manage.py auth:createsuperuser
 python manage.py auth:makepermissions
@@ -67,35 +77,53 @@ python manage.py auth:makepermissions
 ### 3. Generate a Feature
 
 ```bash
-# Generate a new app and entity
+# Gera um novo app e uma entidade (a partir de backend/)
+cd backend
 python manage.py make:app store
 python manage.py make:entity product --app store
 ```
 
 ### 4. Run Everything
 
-Running with Docker (Recommended):
+**Development** (SQLite + Vite dev server):
 ```bash
-cp docker-compose.example.yml docker-compose.yml
-cp Dockerfile.example Dockerfile
-cp Dockerfile.web.example Dockerfile.web
-docker-compose up --build
+cp .env.example .env
+docker compose up --build
 ```
-*API available at `http://localhost:8000`, Frontend at `http://localhost:5173`.*
+*SPA + API served via Caddy at `https://praetor.localhost:8443`, or directly (loopback): API `http://localhost:8000`, Vite dev server `http://localhost:5173`.*
+
+**Production** (PostgreSQL + Caddy, automatic TLS) — set `SECRET_KEY`, `POSTGRES_PASSWORD` and `APP_DOMAIN` in `.env` first:
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
+```
+*SPA and API served at `https://<APP_DOMAIN>`; the API itself is not published.*
 
 ## 📂 Project Structure
 
 ```
 praetor/
-├── apps/                # Backend Modular Apps (Domain-Driven)
-├── core/                # CLI, Base Classes, Templates, Celery
-├── config/              # Centralized configuration (FastAPI, Logging)
-├── web/                 # React Frontend
-│   ├── src/features/    # Frontend Modules (DDD)
+├── backend/             # FastAPI application (the import root)
+│   ├── apps/            # Modular apps (domain-driven)
+│   ├── core/            # Base classes, middlewares, Celery, runtime commands
+│   ├── config/          # Central configuration (settings, db, logging, security)
+│   ├── migrations/      # Alembic migrations
+│   ├── tests/           # Test suite
+│   └── manage.py        # The Heart of the DX (runtime commands)
+├── frontend/            # React + Vite + Mantine
+│   ├── src/features/    # Frontend modules (DDD)
 │   ├── src/components/  # Layout (AppShell) and DataTable (Mantine)
 │   └── src/lib/         # i18n, API client
-├── manage.py            # The Heart of the DX
-└── docker-compose.yml   # Full-stack orchestration
+├── tools/               # Code generators (dev-only): commands + Jinja2 templates
+├── docker-compose.yml       # Shortcut -> docker/compose/dev.yml
+├── docker-compose.prod.yml  # Shortcut -> docker/compose/prod.yml
+├── docs/                    # Narrative documentation
+└── docker/                  # Everything container-related
+    ├── Dockerfile*          # Backend/frontend/Caddy images (dev & prod)
+    ├── caddy/               # Caddyfile routes/TLS (dev & prod)
+    └── compose/
+        ├── base.yml         # Shared components (api/worker/redis/caddy)
+        ├── dev.yml          # Dev (SQLite + Vite dev server)
+        └── prod.yml         # Prod (PostgreSQL + Caddy TLS)
 ```
 
 ---
