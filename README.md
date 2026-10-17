@@ -90,13 +90,13 @@ python manage.py make:entity product --app store
 cp .env.example .env
 docker compose up --build
 ```
-*API available at `http://localhost:8000`, Frontend at `http://localhost:5173`.*
+*SPA + API served via Caddy at `https://praetor.localhost:8443`, or directly (loopback): API `http://localhost:8000`, Vite dev server `http://localhost:5173`.*
 
-**Production** (PostgreSQL + nginx) — set `SECRET_KEY` and `POSTGRES_PASSWORD` in `.env` first:
+**Production** (PostgreSQL + Caddy, automatic TLS) — set `SECRET_KEY`, `POSTGRES_PASSWORD` and `APP_DOMAIN` in `.env` first:
 ```bash
 docker compose -f docker-compose.prod.yml up --build -d
 ```
-*API available at `http://localhost:8000`, Frontend at `http://localhost:8080`.*
+*SPA and API served at `https://<APP_DOMAIN>`; the API itself is not published.*
 
 ## 📂 Project Structure
 
@@ -114,15 +114,16 @@ praetor/
 │   ├── src/components/  # Layout (AppShell) and DataTable (Mantine)
 │   └── src/lib/         # i18n, API client
 ├── tools/               # Code generators (dev-only): commands + Jinja2 templates
-├── docker-compose.yml       # Shortcut -> docker/compose/develop.yml
-├── docker-compose.prod.yml  # Shortcut -> docker/compose/production.yml
+├── docker-compose.yml       # Shortcut -> docker/compose/dev.yml
+├── docker-compose.prod.yml  # Shortcut -> docker/compose/prod.yml
 ├── docs/                    # Narrative documentation
 └── docker/                  # Everything container-related
-    ├── Dockerfile*          # Backend/frontend images (dev & prod)
+    ├── Dockerfile*          # Backend/frontend/Caddy images (dev & prod)
+    ├── caddy/               # Caddyfile routes/TLS (dev & prod)
     └── compose/
-        ├── base.yml         # Shared components (backend/frontend/redis)
-        ├── develop.yml      # Develop (SQLite + Vite dev server)
-        └── production.yml   # Production (PostgreSQL + nginx)
+        ├── base.yml         # Shared components (api/worker/redis/caddy)
+        ├── dev.yml          # Dev (SQLite + Vite dev server)
+        └── prod.yml         # Prod (PostgreSQL + Caddy TLS)
 ```
 
 ---

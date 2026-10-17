@@ -8,7 +8,7 @@ Praetor follows a modular, domain-driven architecture designed for high scalabil
 backend/     # FastAPI app — the import root (apps/, core/, config/, migrations/)
 frontend/    # React + Vite + Mantine SPA
 tools/       # Code generators (dev-only: commands + Jinja2 templates)
-docker/      # Dockerfiles and Compose definitions (base/develop/production)
+docker/      # Dockerfiles and Compose definitions (base/dev/prod)
 ```
 
 `backend/` is self-contained: `uvicorn main:app` and `backend/manage.py` run from there, and the packages `apps`, `core` and `config` live inside it. The generators in `tools/` are **not** part of the production image (the backend build context is `backend/`), so `make:*`, `rm:*` and `generate:*` only exist when the repository is checked out.

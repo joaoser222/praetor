@@ -87,7 +87,7 @@ find . -type f \
      -o -name build.gradle -o -name build.gradle.kts -o -name '*.csproj' \
      -o -name '*.sln' -o -name composer.json -o -name mix.exs \
      -o -name Dockerfile -o -name 'Dockerfile.*' -o -name 'docker-compose*.y*ml' \
-     -o -name '.env.example' -o -name 'nginx.conf' \
+     -o -name '.env.example' -o -name 'Caddyfile*' \
      -o -name '.gitmodules' -o -name '.gitattributes' \
      -o -path '*/compose/*' -o -path '*/.github/workflows/*.yml' \
      -o -path '*/.github/workflows/*.yaml' \) \

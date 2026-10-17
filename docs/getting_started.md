@@ -85,7 +85,7 @@ When you run `make:entity`, the system automatically generates:
 
 The container setup lives in `docker/`: the shared components
 (`docker/compose/base.yml`) are imported by two environments via Compose's
-`include` (`docker/compose/develop.yml` and `docker/compose/production.yml`).
+`include` (`docker/compose/dev.yml` and `docker/compose/prod.yml`).
 Both read the same central `.env`.
 
 **Development** (SQLite + Vite dev server):
@@ -95,7 +95,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-**Production** (PostgreSQL + nginx) — set `SECRET_KEY` and `POSTGRES_PASSWORD` in `.env` first:
+**Production** (PostgreSQL + Caddy, automatic TLS) — set `SECRET_KEY`, `POSTGRES_PASSWORD` and `APP_DOMAIN` in `.env` first:
 
 ```bash
 docker compose -f docker-compose.prod.yml up --build -d

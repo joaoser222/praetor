@@ -31,7 +31,7 @@ TypeScript** and **Shell/CI/containers**.
 | Persistence | `backend/config/database.py` (async SQLAlchemy) and `backend/migrations/` (Alembic); `db:reset`/`db:drop` are destructive |
 | Background jobs | `backend/core/celery_app.py` (Redis) and `backend/apps/*/tasks.py` (empty stubs today) |
 | Generators (dev-only) | `tools/` — excluded from the production image (the build context is `backend/`) |
-| Images/deploy | `docker/` (backend `Dockerfile[.prod]` multi-stage non-root; `Dockerfile.frontend[.prod]` plus `frontend/nginx.conf` proxying `/api`) and `docker/compose/` |
+| Images/deploy | `docker/` (backend `Dockerfile[.prod]` multi-stage non-root; frontend dev `Dockerfile.frontend`; prod `Dockerfile.caddy` SPA+proxy; rotas/TLS em `docker/caddy/Caddyfile.dev` / `Caddyfile.prod`) and `docker/compose/` |
 | CI/release | `.github/workflows/ci.yml` (jobs `backend`, `frontend`, `codegen`) |
 
 Treat the generator templates under `tools/templates/` as a code-execution
