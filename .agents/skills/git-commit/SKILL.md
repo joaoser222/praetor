@@ -1,15 +1,14 @@
 ---
 name: git-commit
 description: >
-  RESTRICTED USE: activate ONLY when user types exactly "commitar" (with
-  double 'm' and double 't'). DO NOT activate for "commit", "comitar",
-  "fazer commit", "git commit", "git push", "subir", "pronto",
-  "finalizar". The only keyword that triggers this skill is the literal
-  string "commitar". When activated, it analyzes changed files via git
-  diff, groups changes into logical commits following Angular Convention
-  with Portuguese descriptions, displays proposed commits with "Aguardando
-  confirmacao de commit" and only applies (with git push) after user
-  confirmation.
+  RESTRICTED USE: activate ONLY when the user types exactly "commit" (the
+  single lowercase word). DO NOT activate for "commitar", "comitar", "make a
+  commit", "git commit", "git push", "push", "ship it", "done" or any other
+  variation. When activated, it analyzes the changed files with git diff,
+  groups them into logical commits following the Angular Convention with
+  Portuguese descriptions, shows the proposed commits ending with "Aguardando
+  confirmação de commit", and only stages, commits and pushes after the user
+  confirms.
 compatibility:
   - git
   - conventional-commits
@@ -20,21 +19,30 @@ compatibility:
 
 ## When to use
 
-Activate this skill **exclusively** when the user types **"commitar"** in
-the chat. Do NOT activate for variations like "comitar", "commit",
-"fazer commit", "gerar commit", "push". Only the exact string "commitar"
-should trigger this skill.
+Activate this skill **exclusively** when the user types the exact word
+**`commit`** in the chat. Any other wording does not activate it.
 
 ## Prerequisites
 
-- Git configured with `user.name` and `user.email`
-- Remote `origin` configured with push permissions
-- Previous commits already follow Angular Convention (check history)
+- Git configured with `user.name` and `user.email`.
+- Remote `origin` configured with push permissions.
+- Previous commits already follow the Angular Convention (check the history
+  with `git log --oneline -20` if unsure).
+
+## Hard rules
+
+- **Never commit or push to `master` or `develop`.** If the current branch is
+  one of them, stop and tell the user to switch to a `feature/*` or
+  `bugfix/*` branch. Use the `publish-workflow` skill to deliver the work.
+- **Show the plan before running any write command.** No `git add`,
+  `git commit` or `git push` until the user confirms.
+- Communicate with the user in **Portuguese (pt-BR)**. Commit descriptions
+  are in **Portuguese (pt-BR)**.
 
 ## Commit format
 
 ```
-<tipo>(<escopo>): <descrição em português>
+<type>(<scope>): <description in Portuguese>
 ```
 
 ### Types
@@ -49,85 +57,73 @@ should trigger this skill.
 | `test` | Tests |
 | `style` | Code formatting, linting |
 
-### Scope (Praetor modules)
+### Scope
 
-The scope must reflect the affected module or domain area. Use one of the
-following (snake_case). For a domain app it should be the app name itself
-(`backend/apps/<app>/`, e.g. `auth`).
+The scope reflects the affected module or domain area, in snake_case. For a
+domain app it is the app name itself (`backend/apps/<app>/`, for example
+`auth`).
 
 **Backend domains (`backend/apps/<app>/`):**
-- `auth` — Autenticação, sessões cookie-first, tokens, RBAC/permissões
-- *any app name* — Apps criados com `make:app <name>` (ex.: `store`)
+- `auth` — authentication, cookie-first sessions, tokens, RBAC/permissions
+- *any app name* — apps created with `make:app <name>` (for example `store`)
 
-**Backend transversal (`backend/`):**
-- `core` — Base classes, middlewares, utils, Celery, auto-descoberta
-- `db` — Migrações Alembic, models, comandos `db:*`
+**Backend cross-cutting (`backend/`):**
+- `core` — base classes, middlewares, utils, Celery, auto-discovery
+- `db` — Alembic migrations, models, `db:*` commands
 - `config` — `config/settings.py`, database, security, logging
 
 **Frontend (`frontend/`):**
-- `frontend` — SPA React/Mantine (features, componentes, rotas, i18n, build)
-- `auth` — Fluxo de login/sessão cookie-first do SPA
+- `frontend` — React/Mantine SPA (features, components, routes, i18n, build)
+- `auth` — login and cookie-first session flow in the SPA
 
-**Transversal:**
-- `docker` — Dockerfiles e Compose (`docker/`)
+**Cross-cutting:**
+- `docker` — Dockerfiles and Compose (`docker/`)
 - `ci` — GitHub Actions (`.github/workflows/`)
-- `codegen` — Geradores e templates Jinja2 (`tools/`)
-- `deps` — Dependências (`pyproject.toml`)
-- `docs` — README, AGENTS.md, CONTRIBUTING.md, `docs/`
-- `test` — Suíte de testes quando não pertencer a um app
+- `codegen` — generators and Jinja2 templates (`tools/`)
+- `deps` — dependencies (`pyproject.toml`)
+- `docs` — README, AGENTS.md, CONTRIBUTING.md, `docs/`, skills in `.agents/`
+- `test` — test suite when it does not belong to a single app
 
-Use the most specific scope possible. If changes affect multiple contexts,
-use the main context scope or create separate commits.
+Use the most specific scope possible. If changes span several contexts, use
+the main context or split them into separate commits.
 
 ### Description
 
-- **Always in Portuguese (PT-BR)**
-- Start with a verb in the present indicative (e.g., "adiciona", "corrige",
-  "remove", "atualiza", "refatora", "cria", "implementa")
-- Max 72 characters
-- Do not start with uppercase
-- Do not end with a period
+- **Always in Portuguese (pt-BR).**
+- Start with a verb in the present indicative: "adiciona", "corrige",
+  "remove", "atualiza", "refatora", "cria", "implementa". Not "adicionado".
+- At most **72 characters**.
+- Lowercase first letter. No trailing period.
 
 ## Execution flow
 
 ### Step 1: Analyze changes
 
-Run `git diff --name-status HEAD` to list all modified, added, and deleted
-files since the last commit.
+Run `git status --short` and `git diff --name-status HEAD` to list the
+modified, added, deleted and untracked files. Files already covered by
+`.gitignore` (`node_modules/`, `dist/`, `venv/`, `.env`, `*.db`,
+`__pycache__/`, `workspace/`, and so on) must never be committed.
 
-Example output:
-```
-M       backend/apps/auth/services/user.py
-A       backend/apps/auth/repositories/token.py
-A       backend/migrations/versions/2000b93f04d2_initial_schema.py
-M       frontend/src/features/auth/action/service.ts
-```
-
-Files already covered by `.gitignore` (`node_modules/`, `dist/`, `venv/`,
-`.env`, `*.db`, `__pycache__/`, etc.) never appear in `git diff` and must not
-be committed.
+For renames, git shows `D` and `A` until the old and new paths are staged
+together. Stage both in the same commit so git records the rename.
 
 ### Step 2: Group into logical commits
 
-Analyze the changed files and group them following this logic:
+1. **Same module and same type** → one commit.
+2. **Same module and different types** → separate commits (for example one
+   `feat` and one `fix` become two commits).
+3. **Different modules** → one commit per module.
+4. **Very small related changes** (one or two trivial files of the same
+   feature) → may share one commit.
+5. **Config, database and frontend infrastructure** → `chore(config)`,
+   `chore(db)`, `chore(frontend)`, and so on.
 
-1. **Same module + same type** → one commit
-2. **Same module + different types** → separate commits (e.g., one `feat`
-   and one `fix` in the same module become two commits)
-3. **Different modules** → separate commits per module
-4. **Very small changes** (1-2 trivial files) → can be grouped into a single
-   commit if part of the same feature
-5. **Config/database/frontend infra** → `chore(config)`, `chore(db)`,
-   `chore(frontend)`, etc.
+The goal is cohesive, atomic commits.
 
-Use good judgment: the goal is cohesive commits where each commit is an
-atomic logical unit.
+### Step 3: Show the proposed commits
 
-For each commit, generate the message in Angular format.
-
-### Step 3: Display proposed commits
-
-Show the user the list of commits to be created:
+Present the list in this format (the layout and the closing line stay in
+Portuguese, because they are shown to the user):
 
 ```
 ========================================
@@ -154,60 +150,54 @@ Aguardando confirmação de commit
 ========================================
 ```
 
-Display the exact message **"Aguardando confirmação de commit"** at the end.
+End the message with the exact sentence **"Aguardando confirmação de commit"**.
 
 ### Step 4: Wait for confirmation
 
-Do NOT run any git commands yet. Only display the proposed commits and
-wait for the user to respond.
+Run no write command in this step. If the user confirms (for example "sim",
+"pode commitar", "ok", "confirmo", "vamos"), go to Step 5. If the user rejects
+or asks for changes ("não", "espera", "altera tal commit"), adjust the plan
+and show it again.
 
-If the user confirms (e.g., "sim", "pode comitar", "ok", "confirmo",
-"vamos"), proceed to Step 5.
+### Step 5: Apply the commits
 
-If the user rejects or asks for changes (e.g., "não", "espera", "altera
-tal commit"), adjust according to feedback and display again.
+For each proposed commit, in the order shown:
 
-### Step 5: Apply commits
-
-For each proposed commit (in the order displayed):
-
-1. **Stage the files**:
+1. Stage exactly the listed files:
    ```bash
    git add <file1> <file2> ...
    ```
-
-2. **Create the commit**:
+2. Create the commit:
    ```bash
-   git commit -m "<tipo>(<escopo>): <descrição>"
+   git commit -m "<type>(<scope>): <description>"
+   ```
+   When a body is needed to justify the change:
+   ```bash
+   git commit -m "<type>(<scope>): <description>" -m "<body>"
    ```
 
-   For commits with a body (when additional justification is needed):
-   ```bash
-   git commit -m "<tipo>(<escopo>): <descrição>" -m "<body>"
-   ```
+Push only **after all commits are created**:
 
-3. **Only after ALL commits are created**, push:
-   ```bash
-   git push origin <current-branch>
-   ```
+```bash
+git push origin "$(git branch --show-current)"
+```
 
-   Discover the current branch with `git branch --show-current`.
+### Step 6: Report the result
 
-### Step 6: Report result
-
-After successful push, display:
+After a successful push, report in Portuguese:
 
 ```
 ✅ Commits enviados com sucesso para <branch>!
 ```
 
-If there is an error in any step, display the error message and stop.
+If any step fails, show the error and stop. Do not retry with `--force` or
+`--no-verify`.
 
 ## Examples
 
-### Example 1: Simple change in one module (backend)
+### Example 1: One module (backend)
 
-**Changed files:**
+Changed files:
 ```
 M backend/apps/auth/services/user.py
 M backend/apps/auth/routers/action.py
@@ -215,14 +205,14 @@ M backend/apps/auth/schemas/user.py
 A backend/apps/auth/tests/test_user.py
 ```
 
-**Generated commit:**
+Generated commit:
 ```
 feat(auth): adiciona revogação de sessão no logout
 ```
 
-### Example 2: Multiple contexts (backend + frontend)
+### Example 2: Backend and frontend
 
-**Changed files:**
+Changed files:
 ```
 M backend/apps/auth/routers/user.py
 M backend/apps/auth/schemas/user.py
@@ -230,31 +220,30 @@ M frontend/src/features/auth/user/service.ts
 M frontend/src/features/auth/user/pages/List.tsx
 ```
 
-**Generated commits:**
+Generated commits:
 ```
 1/2: feat(auth): expõe a listagem paginada de usuários
 2/2: feat(frontend): consome a listagem paginada no DataTable
 ```
 
-### Example 3: Fix + chore in the same batch
+### Example 3: Fix and chore in the same batch
 
-**Changed files:**
+Changed files:
 ```
 M backend/config/security.py
 M backend/pyproject.toml
 ```
 
-**Generated commits:**
+Generated commits:
 ```
 1/2: fix(config): deriva COOKIE_SECURE de DEBUG quando não definido
 2/2: chore(deps): adiciona o ruff ao extra dev
 ```
 
-## Important rules
+## Red flags
 
-- Commit description must be at most **72 characters**
-- Use the verb in the **present indicative** in Portuguese ("adiciona",
-  not "adicionado")
-- Multi-word scopes use snake_case.
-- If there is only one changed file and it belongs to a different context
-  than expected, use the file's directory context
+- Staging or committing before the user confirmed the plan.
+- Committing to `master` or `develop`.
+- Committing `.env`, databases, caches or anything listed in `.gitignore`.
+- Descriptions longer than 72 characters, or written in English.
+- Pushing before every commit of the batch is created.

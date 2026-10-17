@@ -177,7 +177,7 @@ When a docstring feeds OpenAPI it is read by API consumers:
 
 ## Language
 
-- Comments and docstrings: **pt-BR** (see AGENTS.md, "Convenções do projeto",
+- Comments and docstrings: **pt-BR** (see AGENTS.md, "Project conventions (language and naming)",
   the defining split). The Google guide prescribes form, not language.
 - Identifiers (variables, functions, classes, modules): **English**.
 - Established technical terms may stay in English inside a Portuguese
