@@ -3,15 +3,13 @@ name: publish-workflow
 description: >
   RESTRICTED USE: activate ONLY when the user types exactly "publish" or
   exactly "publish_production". DO NOT activate for "publish it", "publicar",
-  "release", "merge", "deploy", "tag" or any other variation. "publish"
-  opens a Pull Request from the current feature/bugfix branch into develop,
-  waits for CI and merges it with --no-ff. "publish_production" opens a
-  release PR from develop into master, merges it, tags vX.Y.Z and syncs
-  master back into develop through a second PR. Never pushes directly to
-  master or develop.
+  "release", "merge", "deploy", "tag" or any other variation. "publish" merges
+  the current feature/bugfix branch into develop locally with --no-ff and
+  pushes develop. "publish_production" merges develop into master locally with
+  --no-ff, tags vX.Y.Z, pushes master and the tag, then merges master back into
+  develop and pushes it. No Pull Requests and no CI wait.
 compatibility:
   - git
-  - gh (GitHub CLI, authenticated)
 ---
 
 # Publish Workflow — Praetor
@@ -21,133 +19,101 @@ compatibility:
 Activate this skill **exclusively** when the user types one of these exact
 words in the chat:
 
-- `publish` — publishes the current feature/bugfix branch into `develop`.
-- `publish_production` — publishes `develop` into `master` as a release.
+- `publish` — merges the current feature/bugfix branch into `develop`.
+- `publish_production` — merges `develop` into `master` as a release.
 
-Any other wording does not activate the skill.
-
-The full rules live in `CONTRIBUTING.md` (Gitflow, branch names, CI gates).
-This skill is the operational procedure.
+Any other wording does not activate the skill. The rules of the branching
+model are in `CONTRIBUTING.md`; this skill is the procedure.
 
 ## Hard rules
 
-- **Never push or commit directly to `master` or `develop`.** Every change
-  enters through a Pull Request.
-- **Use `--merge` (not squash, not rebase)** so the merge commit is kept
-  (`--no-ff` semantics), as required by `CONTRIBUTING.md`.
-- **Never merge with a red CI.** Wait for the required checks: `backend`,
-  `frontend`, `codegen`. If a check fails, stop and report it.
-- **Never skip the local sync** after a merge (see the sync steps). GitHub
-  does not update the local repository.
-- Communicate with the user in **Portuguese (pt-BR)**. Command names,
-  branch names and tags stay in English.
+- **No Pull Requests and no CI wait.** Merges are local, and the push is the
+  publication.
+- **Never force-push, never rewrite history, never move or delete a tag.**
+- **Use `--no-ff`** so every merge keeps its merge commit.
+- **Stop on any error.** On a merge conflict, run `git merge --abort`, report
+  the conflicting files, and stop.
+- Communicate with the user in **Portuguese (pt-BR)**. Command names, branch
+  names and tags stay in English.
 
 ## Preconditions (check before any step)
 
-1. Working tree clean: `git status --short` prints nothing. If there are
-   pending changes, stop and say so. Offer to commit them first with the
-   `commit` skill.
-2. `gh` is authenticated: `gh auth status`.
-3. For `publish`: the current branch must match `feature/<name>` or
-   `bugfix/<name>`. Refuse on `master`, `develop`, `release/*` and
-   `hotfix/*`.
-4. For `publish_production`: the version `X.Y.Z` must be confirmed with the
-   user before anything else (SemVer). Do not guess it.
+1. Working tree clean: `git status --short` prints nothing. If not, stop and
+   offer to commit with the `commit` skill first.
+2. For `publish`: the current branch matches `feature/<name>` or
+   `bugfix/<name>`. Refuse on `master`, `develop`, `release/*` and `hotfix/*`.
+3. For `publish_production`: the version `X.Y.Z` must come from the user; do
+   not guess it. The tag `vX.Y.Z` must not exist yet
+   (`git rev-parse -q --verify refs/tags/vX.Y.Z` prints nothing).
+4. If `backend/pyproject.toml` has a version different from `X.Y.Z`, stop and
+   ask whether to commit the bump first.
 
 ## `publish`: branch → `develop`
 
-1. Push the branch and set upstream:
+1. Bring `develop` up to date:
    ```bash
-   git push -u origin "$(git branch --show-current)"
-   ```
-2. Open the PR against `develop`:
-   ```bash
-   gh pr create --base develop --head "$(git branch --show-current)" --fill
-   ```
-   Note the PR number printed by `gh`.
-3. Wait for the CI checks to finish and check they are green:
-   ```bash
-   gh pr checks <number> --watch
-   ```
-   If any required check fails, stop and report which one.
-4. Merge with a merge commit and delete the remote branch:
-   ```bash
-   gh pr merge <number> --merge --delete-branch
-   ```
-5. Sync the local repository and delete the local branch:
-   ```bash
+   git fetch origin
    git switch develop
-   git pull --ff-only
-   git branch -d <branch>
+   git pull --ff-only origin develop
    ```
-   If `git branch -d` refuses, the branch was not merged locally. Report it
-   instead of forcing with `-D`.
+2. Merge the branch with a merge commit:
+   ```bash
+   git merge --no-ff <branch> -m "Merge branch '<branch>' into develop"
+   ```
+3. Publish `develop`:
+   ```bash
+   git push origin develop
+   ```
+4. Remove the merged branch, locally and on the remote:
+   ```bash
+   git branch -d <branch>
+   git push origin --delete <branch>
+   ```
 
 ## `publish_production`: `develop` → `master`
 
-1. Sync `develop` first:
+1. Bring `develop` and `master` up to date:
    ```bash
+   git fetch origin
    git switch develop
-   git pull --ff-only
-   ```
-2. Create the release branch from `develop`, confirm the version in
-   `backend/pyproject.toml`, and push it:
-   ```bash
-   git switch -c release/X.Y.Z develop
-   git push -u origin release/X.Y.Z
-   ```
-   Only bug fixes and release chores may be added to this branch.
-3. Open the PR against `master`:
-   ```bash
-   gh pr create --base master --head release/X.Y.Z --fill
-   ```
-4. Wait for the CI checks (`gh pr checks <number> --watch`), then merge:
-   ```bash
-   gh pr merge <number> --merge --delete-branch
-   ```
-5. Sync `master` and tag the merge commit:
-   ```bash
+   git pull --ff-only origin develop
    git switch master
-   git pull --ff-only
+   git pull --ff-only origin master
+   ```
+2. Merge `develop` into `master`:
+   ```bash
+   git merge --no-ff develop -m "Merge branch 'develop' into master"
+   ```
+3. Tag the merge commit:
+   ```bash
    git tag -a vX.Y.Z -m "Release X.Y.Z"
+   ```
+4. Publish `master` and the tag:
+   ```bash
+   git push origin master
    git push origin vX.Y.Z
    ```
-6. Bring `master` back into `develop` through a second PR. This keeps the
-   release commit and the tag reachable from `develop`. Do not skip it:
-   ```bash
-   gh pr create --base develop --head master \
-     --title "chore(release): sincroniza master em develop" \
-     --body "Traz o merge da release vX.Y.Z de volta para develop."
-   gh pr checks <number> --watch
-   gh pr merge <number> --merge
-   ```
-   Do not delete `master`.
-7. Sync local `develop` and delete the local release branch:
+5. Bring `master` back into `develop`, so the release commit and the tag are
+   reachable from `develop`, and publish it:
    ```bash
    git switch develop
-   git pull --ff-only
-   git branch -d release/X.Y.Z
+   git merge --no-ff master -m "Merge branch 'master' into develop"
+   git push origin develop
    ```
-
-## Hotfix
-
-A hotfix follows the same shape, with two differences: the branch is
-`hotfix/X.Y.Z` created from `master`, and the first PR targets `master`.
-Ask the user for the version before starting.
 
 ## Failure handling
 
-- **Merge conflict** on a PR: resolve it on the PR branch, never on
-  `master` or `develop`. Then re-run the checks.
-- **Failed CI**: stop, report the failing job, and do not merge.
-- **`git pull --ff-only` fails**: local and remote diverged. Stop and ask
-  the user; do not rewrite history.
-- **Tag already exists**: stop and ask. Never move or delete a published tag.
+- **Merge conflict:** `git merge --abort`, report the files, stop. Resolve it
+  in a feature branch, not in `develop` or `master`.
+- **`git pull --ff-only` fails:** local and remote diverged. Stop and ask the
+  user; do not rewrite history.
+- **`git push` rejected:** stop and report. Never use `--force`.
+- **Tag already exists:** stop and ask. Never move or delete a published tag.
 
 ## Red flags
 
-- Pushing or committing to `master` or `develop` directly.
-- Merging with a red or missing CI check.
+- Committing directly to `develop` or `master`.
+- Pushing before the merge is complete and verified.
 - Creating a tag without the user confirming the version.
-- Skipping the step that brings `master` back into `develop`.
-- Using `-D` (force delete) or `--squash` on these merges.
+- Skipping step 5 of `publish_production`.
+- Using `--force`, `-D` or `--squash` on these merges.

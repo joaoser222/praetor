@@ -1,7 +1,7 @@
 # Contributing to Praetor
 
 Thanks for your interest in improving Praetor! This document describes the
-**branching model (Gitflow)**, the **commit convention** and the **release
+**branching model (Gitflow)**, the **commit convention** and the **publishing
 process** used by this repository.
 
 ---
@@ -19,25 +19,25 @@ several short-lived supporting branches.
 | `develop` | Integration branch. Reflects the latest delivered development changes. | ❌ Never      |
 
 > `develop` is the **default target** for day-to-day work. `master` only
-> receives code through `release/*` and `hotfix/*` branches.
+> receives code through the release and hotfix flows below.
 
 ### Supporting branches
 
 | Branch               | Created from | Merged into                    | Naming                    | Purpose                          |
 | -------------------- | ------------ | ------------------------------ | ------------------------- | -------------------------------- |
-| Feature              | `develop`    | `develop` (PR, `--no-ff`)      | `feature/<short-name>`    | New feature or non-urgent change |
-| Bugfix *(optional)*  | `develop`    | `develop` (PR, `--no-ff`)      | `bugfix/<short-name>`     | Non-urgent fix                   |
-| Release              | `develop`    | `master` **and** `develop`     | `release/<X.Y.Z>`         | Stabilize a release              |
+| Feature              | `develop`    | `develop` (`publish`, `--no-ff`) | `feature/<short-name>`  | New feature or non-urgent change |
+| Bugfix *(optional)*  | `develop`    | `develop` (`publish`, `--no-ff`) | `bugfix/<short-name>`   | Non-urgent fix                   |
+| Release              | `develop`    | `master` **and** `develop` (`publish_production`) | `release/<X.Y.Z>` | Stabilize a release |
 | Hotfix               | `master`     | `master` **and** `develop`     | `hotfix/<X.Y.Z>`          | Urgent production fix            |
 
 ### Rules
 
-- **Never push directly to `master` or `develop`.** Always open a Pull Request.
-- Feature and hotfix merges use `--no-ff` to preserve the branch topology.
-- A `release/*` or `hotfix/*` branch is **tagged on `master`** as `vX.Y.Z`
-  (Semantic Versioning).
+- **Never commit directly to `master` or `develop`.** Code reaches them only
+  through the `publish` and `publish_production` procedures.
+- Merges use `--no-ff` to preserve the branch topology.
+- A `master` release is **tagged** as `vX.Y.Z` (Semantic Versioning).
 - Delete the supporting branch after it is merged.
-- Keep branches short-lived: rebase onto the target branch before opening the PR
+- Keep branches short-lived: merge `develop` into the branch before publishing
   if it has drifted.
 
 ### Naming
@@ -86,16 +86,25 @@ chore(ci): adiciona job de codegen
 
 ---
 
-## Pull requests
+## Publishing
 
-1. Branch off `develop` (or `master`, for `release/*`/`hotfix/*`).
-2. Make sure the full CI is green before requesting review.
-3. Open the PR **against `develop`** (or `master` for release/hotfix).
-4. Reference the related issue and keep the PR focused on one concern.
+There are no Pull Requests and no CI gate in this flow. Publishing is a
+**local `--no-ff` merge followed by a push**, and it is run with the keywords
+below. The step-by-step procedure is in `.agents/skills/publish-workflow/SKILL.md`.
 
-### CI gates
+| Keyword              | Effect                                                                 |
+| -------------------- | ---------------------------------------------------------------------- |
+| `publish`            | Merges the current `feature/*` or `bugfix/*` branch into `develop`, pushes `develop`, and deletes the merged branch. |
+| `publish_production` | Merges `develop` into `master`, tags `vX.Y.Z`, pushes `master` and the tag, then merges `master` back into `develop` and pushes it. |
 
-The workflow `.github/workflows/ci.yml` must pass. It has three jobs:
+Before publishing, the working tree must be clean. Changes are committed with
+the `commit` skill.
+
+---
+
+## CI
+
+`.github/workflows/ci.yml` runs on push and pull request, with three jobs:
 
 | Job        | What it runs                                                                                     |
 | ---------- | ------------------------------------------------------------------------------------------------ |
@@ -103,32 +112,18 @@ The workflow `.github/workflows/ci.yml` must pass. It has three jobs:
 | `frontend` | `npm ci`, `npm run lint`, `npm run build`, from `frontend/`                                      |
 | `codegen`  | `make:app sample` + `make:entity product` (from `backend/`), then lint/test the generated app and `npm run build` in `frontend/` |
 
+The CI reports the state of each push. It is **not** a gate of the publish
+flow in this repository.
+
 ---
 
-## Release process
+## Hotfix
 
-1. Branch `release/<X.Y.Z>` from `develop`.
-2. Bump the version and update the changelog. Only bug fixes and release
-   chores are allowed on this branch.
-3. Open a PR into `master` and merge it.
-4. Tag the merge commit on `master`:
-
-   ```bash
-   git tag -a vX.Y.Z -m "Release X.Y.Z"
-   git push origin vX.Y.Z
-   ```
-
-5. Merge `master` back into `develop` (so the release commit and tag are
-   reachable from `develop`).
-6. Delete the `release/<X.Y.Z>` branch.
-
-## Hotfix process
-
-1. Branch `hotfix/<X.Y.Z>` from `master` (increment the **patch** version).
-2. Fix the issue and add a regression test.
-3. Open a PR into `master`, merge it and tag `vX.Y.Z`.
-4. Merge `master` back into `develop`.
-5. Delete the `hotfix/<X.Y.Z>` branch.
+1. Create `hotfix/<X.Y.Z>` from `master` (increment the **patch** version) and
+   fix the issue, with a regression test.
+2. Merge it into `master` with `--no-ff`, tag `vX.Y.Z`, and push.
+3. Merge `master` back into `develop` with `--no-ff` and push.
+4. Delete the `hotfix/<X.Y.Z>` branch.
 
 ---
 
@@ -141,10 +136,5 @@ bootstrapping a fresh fork, create it once from `master`:
 git branch develop master
 git push -u origin develop
 ```
-
-Then, in GitHub → **Settings → Branches**, protect both `master` and `develop`:
-
-- Require a pull request before merging.
-- Require the CI status checks (`backend`, `frontend`, `codegen`) to pass.
 
 *Praetor — Building scalable systems, faster.*

@@ -8,8 +8,8 @@ Agent procedures live in skills, written in **English**. Triggers are exact word
 | Trigger | Skill | Use |
 |---|---|---|
 | `commit` | `git-commit` | Groups changes into Angular-style commits with pt-BR descriptions; commits and pushes only after confirmation |
-| `publish` | `publish-workflow` | PR from a `feature/*` or `bugfix/*` branch into `develop` |
-| `publish_production` | `publish-workflow` | Release: PR `develop` → `master`, tag `vX.Y.Z`, syncs `develop` |
+| `publish` | `publish-workflow` | Local `--no-ff` merge of a `feature/*` or `bugfix/*` branch into `develop`, then push |
+| `publish_production` | `publish-workflow` | Local `--no-ff` merge `develop` → `master`, tag `vX.Y.Z`, push, then merge `master` back into `develop` and push |
 | `planner` / `apply` | `planning-and-task-breakdown` | Plans a feature under `workspace/changes/`; executes only with no open questions |
 | code generation request | `project-codegen` | `make:*`, `rm:*`, `generate:schemas` |
 | migration request | `database-migrations` | `db:*` and the canonical order (`db:migrate`) |
@@ -35,11 +35,11 @@ When creating or editing a skill: name and description in English, exact trigger
 
 ## Gitflow (branches and commits)
 Detailed documentation is in `CONTRIBUTING.md`; the publishing procedure is in the `publish-workflow` skill (triggers `publish` and `publish_production`). Operational summary:
-- Model: **full Gitflow**. Long-lived branches: `master` (production, tagged `vX.Y.Z`) and `develop` (integration). **Never** commit directly to them — always go through a Pull Request.
+- Model: **full Gitflow**. Long-lived branches: `master` (production, tagged `vX.Y.Z`) and `develop` (integration). **Never** commit directly to them; they receive code only through the `publish` and `publish_production` skills (local `--no-ff` merge + push). There are no Pull Requests in this flow.
 - Supporting branches: `feature/<name>` (from/to `develop`), `bugfix/<name>` (optional, from/to `develop`), `release/<X.Y.Z>` (from `develop`; merged into `master` **and** `develop`, with a tag) and `hotfix/<X.Y.Z>` (from `master`; merged into `master` **and** `develop`, with a tag).
-- Feature and hotfix merges use `--no-ff`; delete the branch after merging. Feature/bugfix PRs target `develop`; release/hotfix PRs target `master`.
+- Merges use `--no-ff`; delete the branch after merging. Feature/bugfix branches merge into `develop`; release/hotfix branches merge into `master` and then back into `develop`.
 - Commits follow the **Angular Convention** with a **pt-BR** description and ≤ 72 characters (see `.agents/skills/git-commit/SKILL.md`), e.g. `fix(auth): corrige expiração do token`.
-- Required CI before merging: jobs `backend` (`ruff check . ../tools` + `pytest`, from `backend/`), `frontend` (`npm run lint` + `npm run build`, from `frontend/`) and `codegen` (`make:app`/`make:entity` from `backend/` + lint/test of the generated code + frontend build).
+- CI (`.github/workflows/ci.yml`) runs on push and PR (jobs `backend`, `frontend`, `codegen`), but it is **not** a gate of the publish flow in this repository. The publish flow is local merges and pushes.
 - Bootstrap (`develop` already exists locally and remotely; only needed in a new fork): `git branch develop master && git push -u origin develop`.
 
 ## Environment setup
