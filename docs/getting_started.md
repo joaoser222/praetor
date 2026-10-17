@@ -9,18 +9,18 @@ Get your Praetor project up and running in minutes.
 ## 1. Environment Setup
 
 ```bash
-# Clone and enter the project
+# Clona e entra no projeto
 git clone <repo_url>
 cd praetor
 
-# Setup Python environment (a partir de backend/)
+# Configura o ambiente Python (a partir de backend/)
 python -m venv venv
 source venv/bin/activate
 cd backend
 pip install -e ".[dev]"
 cd ..
 
-# Initial configuration (na raiz, compartilhada com o Docker Compose)
+# Configuração inicial (na raiz, compartilhada com o Docker Compose)
 cp .env.example .env
 ```
 
@@ -29,13 +29,13 @@ cp .env.example .env
 ```bash
 cd backend
 
-# Apply migrations (o projeto já inclui a migração inicial do schema)
+# Aplica as migrações (o projeto já inclui a migração inicial do schema)
 python manage.py db:migrate
 
-# Create an Admin user
+# Cria um usuário administrador
 python manage.py auth:createsuperuser
 
-# Generate initial system permissions
+# Gera as permissões iniciais do sistema
 python manage.py auth:makepermissions
 ```
 
@@ -48,10 +48,10 @@ python manage.py auth:makepermissions
 ```bash
 cd backend
 
-# Create an app (domain)
+# Cria um app (domínio)
 python manage.py make:app store
 
-# Create an entity (module)
+# Cria uma entidade (módulo)
 python manage.py make:entity product --app store
 ```
 

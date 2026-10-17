@@ -45,21 +45,21 @@ Praetor is built to accelerate development without sacrificing architectural int
 ### 1. Installation
 
 ```bash
-# Clone the repository
+# Clona o repositório
 git clone <your-repo-url>
 cd praetor
 
-# Setup Backend
+# Configura o backend
 python -m venv venv
 source venv/bin/activate
 cd backend
 pip install -e ".[dev]"
 cd ..
 
-# Central configuration (shared with Docker Compose)
+# Configuração central (compartilhada com o Docker Compose)
 cp .env.example .env
 
-# Setup Frontend
+# Configura o frontend
 cd frontend
 npm install
 cd ..
@@ -77,7 +77,7 @@ python manage.py auth:makepermissions
 ### 3. Generate a Feature
 
 ```bash
-# Generate a new app and entity (from backend/)
+# Gera um novo app e uma entidade (a partir de backend/)
 cd backend
 python manage.py make:app store
 python manage.py make:entity product --app store

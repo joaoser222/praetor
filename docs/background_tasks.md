@@ -30,7 +30,7 @@ from core.celery_app import celery_app
 
 @celery_app.task(name="notifications.send_welcome_email")
 def send_welcome_email(email: str):
-    # Logic to send email
+    # Lógica de envio do e-mail
     print(f"Sending email to {email}")
     return True
 ```
@@ -54,6 +54,6 @@ In your services or routers, you can queue a task using `.delay()`:
 from .tasks import send_welcome_email
 
 async def some_action():
-    # This returns immediately, the task runs in the background
+    # Retorna imediatamente; a task roda em segundo plano
     send_welcome_email.delay("user@example.com")
 ```
